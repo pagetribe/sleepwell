@@ -2,7 +2,7 @@
   "name": "SleepWell",
   "short_name": "SleepWell",
   "description": "Log and analyze your sleep patterns for a better night's rest.",
-  "start_url": "/sleepwell/",
+  "start_url": ".",
   "display": "standalone",
   "background_color": "#F5F5F5",
   "theme_color": "#E6E6FA",
