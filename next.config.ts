@@ -10,7 +10,7 @@ const withPWA = require('next-pwa')({
 const nextConfig: NextConfig = {
   /* config options here */
   output: 'export',
-  basePath: process.env.NODE_ENV === 'production' ? 'sleepwell' : '',
+  basePath: process.env.NODE_ENV === 'production' ? '/sleepwell' : '',
   typescript: {
     ignoreBuildErrors: true,
   },
