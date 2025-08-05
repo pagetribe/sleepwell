@@ -1,6 +1,7 @@
 {
   "name": "nextn",
   "version": "0.1.0",
+  "homepage": "https://pagetribe.github.io/sleepwell/",
   "private": true,
   "scripts": {
     "dev": "next dev --turbopack -p 9002",
