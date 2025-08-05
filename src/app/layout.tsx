@@ -6,7 +6,7 @@ import { Toaster } from "@/components/ui/toaster";
 export const metadata: Metadata = {
   title: 'SleepWell',
   description: "Log and analyze your sleep patterns for a better night's rest.",
-  manifest: '/manifest.webmanifest',
+  manifest: '/sleepwell/manifest.webmanifest',
 };
 
 export default function RootLayout({
