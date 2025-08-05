@@ -1,0 +1,97 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    --background: 240 60% 97%;
+    --foreground: 240 10% 20%;
+    --card: 240 60% 97%;
+    --card-foreground: 240 10% 20%;
+    --popover: 240 60% 97%;
+    --popover-foreground: 240 10% 20%;
+    --primary: 220 80% 60%;
+    --primary-foreground: 0 0% 100%;
+    --secondary: 240 10% 90%;
+    --secondary-foreground: 240 10% 20%;
+    --muted: 240 10% 90%;
+    --muted-foreground: 240 5% 45.1%;
+    --accent: 240 10% 90%;
+    --accent-foreground: 240 10% 20%;
+    --destructive: 0 84.2% 60.2%;
+    --destructive-foreground: 0 0% 98%;
+    --border: 240 10% 85%;
+    --input: 240 10% 85%;
+    --ring: 220 80% 60%;
+    --chart-1: 12 76% 61%;
+    --chart-2: 173 58% 39%;
+    --chart-3: 197 37% 24%;
+    --chart-4: 43 74% 66%;
+    --chart-5: 27 87% 67%;
+    --radius: 0.8rem;
+  }
+  .dark {
+    --background: 240 10% 10%;
+    --foreground: 0 0% 98%;
+    --card: 240 10% 10%;
+    --card-foreground: 0 0% 98%;
+    --popover: 240 10% 10%;
+    --popover-foreground: 0 0% 98%;
+    --primary: 220 80% 60%;
+    --primary-foreground: 0 0% 9%;
+    --secondary: 240 5% 20%;
+    --secondary-foreground: 0 0% 98%;
+    --muted: 240 5% 20%;
+    --muted-foreground: 0 0% 63.9%;
+    --accent: 240 5% 20%;
+    --accent-foreground: 0 0% 98%;
+    --destructive: 0 62.8% 30.6%;
+    --destructive-foreground: 0 0% 98%;
+    --border: 240 5% 25%;
+    --input: 240 5% 25%;
+    --ring: 220 80% 60%;
+    --chart-1: 220 70% 50%;
+    --chart-2: 160 60% 45%;
+    --chart-3: 30 80% 55%;
+    --chart-4: 280 65% 60%;
+    --chart-5: 340 75% 55%;
+    --radius: 0.8rem;
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+  body {
+    @apply bg-background text-foreground;
+  }
+}
+
+@layer components {
+  .neumorphic-flat {
+    @apply bg-background shadow-neumorphic-flat rounded-lg;
+  }
+  .neumorphic-inset {
+    @apply bg-background shadow-neumorphic-inset rounded-lg;
+  }
+  .neumorphic-convex {
+    @apply bg-background shadow-neumorphic-convex rounded-lg;
+  }
+  .neumorphic-concave {
+    @apply bg-background shadow-neumorphic-concave rounded-lg;
+  }
+
+  .dark .neumorphic-flat {
+    @apply bg-background shadow-neumorphic-flat-dark;
+  }
+  .dark .neumorphic-inset {
+    @apply bg-background shadow-neumorphic-inset-dark;
+  }
+   .dark .neumorphic-convex {
+    @apply bg-background shadow-neumorphic-convex-dark;
+  }
+  .dark .neumorphic-concave {
+    @apply bg-background shadow-neumorphic-concave-dark;
+  }
+}
