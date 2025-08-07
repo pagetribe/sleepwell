@@ -1,4 +1,4 @@
-import type { Metadata } from 'next';
+import type { Metadata, Viewport } from 'next';
 import { Inter } from 'next/font/google'; // Import the font
 import './globals.css';
 import { Toaster } from "@/components/ui/toaster";
@@ -14,6 +14,10 @@ export const metadata: Metadata = {
   title: 'SleepWell',
   description: "Log and analyze your sleep patterns for a better night's rest.",
   manifest: '/manifest.webmanifest', // Corrected path assuming it's in the public folder
+};
+
+export const viewport: Viewport = {
+  themeColor: '#E6E6FA',
 };
 
 export default function RootLayout({
