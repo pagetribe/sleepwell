@@ -1,4 +1,3 @@
-
 'use client';
 
 import type { FC } from 'react';
@@ -8,7 +7,7 @@ import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/
 import type { SleepLog } from '@/lib/types';
 import { MOOD_OPTIONS } from '@/lib/types';
 import { calculateDuration } from '@/lib/utils';
-import { Clock, Bed, Sunrise, Trash2, Brain, Moon, Cloudy, Info } from 'lucide-react';
+import { Bed, Brain, Clock, Cloudy, Info, Moon, Sunrise, Trash2 } from 'lucide-react';
 
 interface SleepLogListProps {
   logs: SleepLog[];
@@ -88,12 +87,12 @@ export const SleepLogList: FC<SleepLogListProps> = ({ logs, onDelete, defaultOpe
               <AccordionContent>
                 <div className="space-y-4 p-4 bg-background/50 border-t">
                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-base">
-                      <div className="flex items-center gap-2"><Bed className="h-4 w-4 text-primary" /> <span>Bedtime: {formatTime(log.bedtime)}</span></div>
-                      <div className="flex items-center gap-2"><Sunrise className="h-4 w-4 text-primary" /> <span>Wake-up: {formatTime(log.wakeupTime)}</span></div>
-                      <div className="flex items-center gap-2"><Moon className="h-4 w-4 text-primary" /> <span>Bedtime Mood: <MoodIndicator value={log.bedtimeMood} /></span></div>
-                      <div className="flex items-center gap-2"><Sunrise className="h-4 w-4 text-primary" /> <span>Wake-up Mood: <MoodIndicator value={log.wakeupMood} /></span></div>
-                      <div className="flex items-center gap-2"><Cloudy className="h-4 w-4 text-primary" /> <span>Fuzziness: {log.fuzziness > 0 ? `${log.fuzziness}/5` : '-'}</span></div>
-                      {log.wokeUpDuringDream && <div className="flex items-center gap-2"><Brain className="h-4 w-4 text-primary" /> <span>Woke up mid-dream</span></div>}
+                      <div className="flex items-center gap-2 h-8"><Bed className="h-4 w-4 text-primary" /> <span>Bedtime: {formatTime(log.bedtime)}</span></div>
+                      <div className="flex items-center gap-2 h-8"><Sunrise className="h-4 w-4 text-primary" /> <span>Wake-up: {formatTime(log.wakeupTime)}</span></div>
+                      <div className="flex items-center gap-2 h-8"><Moon className="h-4 w-4 text-primary" /> <span>Bedtime Mood:</span> <MoodIndicator value={log.bedtimeMood} /></div>
+                      <div className="flex items-center gap-2 h-8"><Sunrise className="h-4 w-4 text-primary" /> <span>Wake-up Mood:</span> <MoodIndicator value={log.wakeupMood} /></div>
+                      <div className="flex items-center gap-2 h-8"><Cloudy className="h-4 w-4 text-primary" /> <span>Fuzziness: {log.fuzziness > 0 ? `${log.fuzziness}/5` : '-'}</span></div>
+                      <div className="flex items-center gap-2 h-8"><Brain className="h-4 w-4 text-primary" /> <span>{log.wokeUpDuringDream ? 'Woke mid-dream' : "Didn't wake mid-dream"}</span></div>
                    </div>
                    {log.additionalInfo && (
                      <div className="neumorphic-inset p-3">
