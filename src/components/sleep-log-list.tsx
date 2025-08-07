@@ -7,6 +7,7 @@ import { Button } from '@/components/ui/button';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
 import type { SleepLog } from '@/lib/types';
 import { MOOD_OPTIONS } from '@/lib/types';
+import { calculateDuration } from '@/lib/utils';
 import { Clock, Bed, Sunrise, Trash2, Brain, Moon, Cloudy, Info } from 'lucide-react';
 
 interface SleepLogListProps {
@@ -28,10 +29,10 @@ export const SleepLogList: FC<SleepLogListProps> = ({ logs, onDelete, defaultOpe
   if (logs.length === 0) {
     return (
       <div>
-        <CardHeader>
+        <CardHeader className="px-0">
           <CardTitle className="text-center text-2xl font-semibold">Sleep History</CardTitle>
         </CardHeader>
-        <CardContent>
+        <CardContent className="px-0">
           <div className="text-center text-muted-foreground py-8">
             <p>No sleep logs yet.</p>
             <p>Your logged sleep will appear here.</p>
@@ -54,10 +55,10 @@ export const SleepLogList: FC<SleepLogListProps> = ({ logs, onDelete, defaultOpe
 
   return (
     <div>
-      <CardHeader>
+      <CardHeader className="px-4">
         <CardTitle className="text-center text-2xl font-semibold">Sleep History</CardTitle>
       </CardHeader>
-      <CardContent className="space-y-4">
+      <CardContent className="space-y-2 px-0">
         <Accordion type="multiple" className="w-full" defaultValue={defaultValues}>
           {logs.map((log) => (
             <AccordionItem value={log.id} key={log.id} className="border-b-0 neumorphic-flat mb-3 !rounded-lg overflow-hidden">
@@ -65,13 +66,19 @@ export const SleepLogList: FC<SleepLogListProps> = ({ logs, onDelete, defaultOpe
                 <div className="flex justify-between items-center w-full">
                   <div className="flex flex-col text-left">
                     <span className="font-semibold text-base">{new Date(log.date).toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' })}</span>
-                    <span className="text-sm text-muted-foreground flex items-center gap-2"><Clock className="h-4 w-4" />
-                      {log.sleepDuration === 'In Progress' ? (
-                        <span className="text-yellow-500">In Progress...</span>
-                      ) : (
-                        log.sleepDuration
-                      )}
-                    </span>
+                    <div className="flex items-start gap-2 text-base text-muted-foreground">
+                      <Clock className="h-4 w-4 mt-1 shrink-0" />
+                      <div className="flex flex-col items-start">
+                        <span>
+                          {log.sleepDuration === 'In Progress'
+                            ? calculateDuration(log.bedtime, log.wakeupTime ?? new Date().toTimeString().slice(0,5))
+                            : log.sleepDuration}
+                        </span>
+                        {log.sleepDuration === 'In Progress' && (
+                          <span className="text-xs text-yellow-500">In Progress...</span>
+                        )}
+                      </div>
+                    </div>
                   </div>
                   <div className="flex items-center gap-2">
                     <MoodIndicator value={log.wakeupMood} />
@@ -80,7 +87,7 @@ export const SleepLogList: FC<SleepLogListProps> = ({ logs, onDelete, defaultOpe
               </AccordionTrigger>
               <AccordionContent>
                 <div className="space-y-4 p-4 bg-background/50 border-t">
-                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-sm">
+                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-base">
                       <div className="flex items-center gap-2"><Bed className="h-4 w-4 text-primary" /> <span>Bedtime: {formatTime(log.bedtime)}</span></div>
                       <div className="flex items-center gap-2"><Sunrise className="h-4 w-4 text-primary" /> <span>Wake-up: {formatTime(log.wakeupTime)}</span></div>
                       <div className="flex items-center gap-2"><Moon className="h-4 w-4 text-primary" /> <span>Bedtime Mood: <MoodIndicator value={log.bedtimeMood} /></span></div>
@@ -91,7 +98,7 @@ export const SleepLogList: FC<SleepLogListProps> = ({ logs, onDelete, defaultOpe
                    {log.additionalInfo && (
                      <div className="neumorphic-inset p-3">
                        <h4 className="font-semibold mb-2 flex items-center"><Info className="mr-2 h-4 w-4" />Notes:</h4>
-                       <p className="text-sm text-muted-foreground">{log.additionalInfo}</p>
+                       <p className="text-base text-muted-foreground">{log.additionalInfo}</p>
                      </div>
                    )}
                    <CardFooter className="p-0 pt-4 flex justify-end">

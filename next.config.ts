@@ -1,6 +1,3 @@
-// next.config.js
-
-import type { NextConfig } from 'next';
 
 const withPWA = require('next-pwa')({
   dest: 'public',
@@ -8,16 +5,22 @@ const withPWA = require('next-pwa')({
   skipWaiting: true,
 });
 
-const nextConfig: NextConfig = {
-  output: 'export',
+// Check if we are building for GitHub Pages.
+// We'll set this to true only during the production build for GitHub.
+const isProd = process.env.NODE_ENV === 'production';
 
-  // IMPORTANT: Set basePath and assetPrefix for GitHub Pages
-  basePath: '/sleepwell',
-  assetPrefix: '/sleepwell/',
+/** @type {import('next').NextConfig} */
+const nextConfig = {
+  // Use the basePath and assetPrefix only for the production build on GitHub
+  basePath: isProd ? '/sleepwell' : '',
+  assetPrefix: isProd ? '/sleepwell/' : '',
 
-  // CRITICAL: This is needed for next/image to work with static exports
+  // Set output to 'export' only for the production build
+  output: isProd ? 'export' : undefined,
+
   images: {
-    unoptimized: true, // ADD THIS
+    // Keep this for static exports
+    unoptimized: true,
     remotePatterns: [
       {
         protocol: 'https',
@@ -27,8 +30,8 @@ const nextConfig: NextConfig = {
       },
     ],
   },
-
-  // WARNING: These lines hide errors. You should remove them and fix the errors.
+  
+  // You should aim to fix these errors rather than ignore them long-term
   typescript: {
     ignoreBuildErrors: true,
   },
