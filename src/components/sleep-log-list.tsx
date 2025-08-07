@@ -7,7 +7,7 @@ import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/
 import type { SleepLog } from '@/lib/types';
 import { MOOD_OPTIONS } from '@/lib/types';
 import { calculateDuration } from '@/lib/utils';
-import { Bed, Brain, Clock, Cloudy, Info, Moon, Sunrise, Trash2 } from 'lucide-react';
+import { AlarmClock, Bed, Brain, Clock, Cloudy, Info, Moon, Sunrise, Trash2 } from 'lucide-react';
 
 interface SleepLogListProps {
   logs: SleepLog[];
@@ -59,12 +59,35 @@ export const SleepLogList: FC<SleepLogListProps> = ({ logs, onDelete, defaultOpe
       </CardHeader>
       <CardContent className="space-y-2 px-0">
         <Accordion type="multiple" className="w-full" defaultValue={defaultValues}>
-          {logs.map((log) => (
-            <AccordionItem value={log.id} key={log.id} className="border-b-0 neumorphic-flat mb-3 !rounded-lg overflow-hidden">
+          {logs.map((log) => {
+            // A sleep log is for the night of the day before the log's date.
+            // e.g., a log with date "2024-08-07" is for the night of August 6th.
+            // We add T00:00:00 to ensure the date is parsed in the local timezone.
+            const wakeUpDate = new Date(`${log.date}T00:00:00`);
+            const bedTimeDate = new Date(wakeUpDate);
+            bedTimeDate.setDate(wakeUpDate.getDate() - 1);
+
+            const titleDateOptions: Intl.DateTimeFormatOptions = {
+              weekday: 'short',
+              month: 'short',
+              day: 'numeric',
+            };
+
+            const title = `${bedTimeDate.toLocaleDateString('en-US', titleDateOptions)} - ${wakeUpDate.toLocaleDateString('en-US', titleDateOptions)}`;
+
+            const detailDateOptions: Intl.DateTimeFormatOptions = {
+              weekday: 'long',
+              month: 'long',
+              day: 'numeric',
+            };
+            const bedTimeFullDate = bedTimeDate.toLocaleDateString('en-US', detailDateOptions);
+            const wakeUpFullDate = wakeUpDate.toLocaleDateString('en-US', detailDateOptions);
+
+            return (<AccordionItem value={log.id} key={log.id} className="border-b-0 neumorphic-flat mb-3 !rounded-lg overflow-hidden">
               <AccordionTrigger className="hover:no-underline p-4">
                 <div className="flex justify-between items-center w-full">
                   <div className="flex flex-col text-left">
-                    <span className="font-semibold text-base">{new Date(log.date).toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' })}</span>
+                    <span className="font-semibold text-base">{title}</span>
                     <div className="flex items-start gap-2 text-base text-muted-foreground">
                       <Clock className="h-4 w-4 mt-1 shrink-0" />
                       <div className="flex flex-col items-start">
@@ -85,15 +108,39 @@ export const SleepLogList: FC<SleepLogListProps> = ({ logs, onDelete, defaultOpe
                 </div>
               </AccordionTrigger>
               <AccordionContent>
-                <div className="space-y-4 p-4 bg-background/50 border-t">
-                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-base">
-                      <div className="flex items-center gap-2 h-8"><Bed className="h-4 w-4 text-primary" /> <span>Bedtime: {formatTime(log.bedtime)}</span></div>
-                      <div className="flex items-center gap-2 h-8"><Sunrise className="h-4 w-4 text-primary" /> <span>Wake-up: {formatTime(log.wakeupTime)}</span></div>
-                      <div className="flex items-center gap-2 h-8"><Moon className="h-4 w-4 text-primary" /> <span>Bedtime Mood:</span> <MoodIndicator value={log.bedtimeMood} /></div>
-                      <div className="flex items-center gap-2 h-8"><Sunrise className="h-4 w-4 text-primary" /> <span>Wake-up Mood:</span> <MoodIndicator value={log.wakeupMood} /></div>
-                      <div className="flex items-center gap-2 h-8"><Cloudy className="h-4 w-4 text-primary" /> <span>Fuzziness: {log.fuzziness > 0 ? `${log.fuzziness}/5` : '-'}</span></div>
-                      <div className="flex items-center gap-2 h-8"><Brain className="h-4 w-4 text-primary" /> <span>{log.wokeUpDuringDream ? 'Woke mid-dream' : "Didn't wake mid-dream"}</span></div>
+                <div className="space-y-6 p-4 bg-background/50 border-t">
+                   {/* Evening Details */}
+                   <div className="space-y-3">
+                      <h4 className="font-semibold text-muted-foreground flex items-center gap-2">
+                        <Moon className="h-4 w-4" />
+                        <span>Evening - {bedTimeFullDate}</span>
+                      </h4>
+                      <div className="pl-6 space-y-2 text-base border-l-2 border-primary/20">
+                        <div className="flex items-center gap-2">
+                          <Bed className="h-4 w-4 text-primary" /> 
+                          <span>Bedtime: {formatTime(log.bedtime)}</span>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <Moon className="h-4 w-4 text-primary" /> 
+                          <span>Mood: <MoodIndicator value={log.bedtimeMood} /></span>
+                        </div>
+                      </div>
                    </div>
+
+                   {/* Morning Details */}
+                   <div className="space-y-3">
+                      <h4 className="font-semibold text-muted-foreground flex items-center gap-2">
+                        <AlarmClock className="h-4 w-4" />
+                        <span>Morning - {wakeUpFullDate}</span>
+                      </h4>
+                      <div className="pl-6 space-y-2 text-base border-l-2 border-primary/20">
+                        <div className="flex items-center gap-2"><AlarmClock className="h-4 w-4 text-primary" /> <span>Wake-up: {formatTime(log.wakeupTime)}</span></div>
+                        <div className="flex items-center gap-2"><Sunrise className="h-4 w-4 text-primary" /> <span>Mood: <MoodIndicator value={log.wakeupMood} /></span></div>
+                        <div className="flex items-center gap-2"><Cloudy className="h-4 w-4 text-primary" /> <span>Fuzziness: {log.fuzziness > 0 ? `${log.fuzziness}/5` : '-'}</span></div>
+                        <div className="flex items-center gap-2"><Brain className="h-4 w-4 text-primary" /> <span>{log.wokeUpDuringDream ? 'Woke mid-dream' : "Didn't wake mid-dream"}</span></div>
+                      </div>
+                   </div>
+
                    {log.additionalInfo && (
                      <div className="neumorphic-inset p-3">
                        <h4 className="font-semibold mb-2 flex items-center"><Info className="mr-2 h-4 w-4" />Notes:</h4>
@@ -108,8 +155,8 @@ export const SleepLogList: FC<SleepLogListProps> = ({ logs, onDelete, defaultOpe
                    </CardFooter>
                 </div>
               </AccordionContent>
-            </AccordionItem>
-          ))}
+            </AccordionItem>);
+          })}
         </Accordion>
       </CardContent>
     </div>
