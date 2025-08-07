@@ -19,6 +19,7 @@ import { SleepLogList } from './sleep-log-list';
 
 interface SleepStatsProps {
   logs: SleepLog[];
+  onDelete: (id: string) => void;
 }
 
 const calculateScore = (log: SleepLog): number => {
@@ -28,7 +29,7 @@ const calculateScore = (log: SleepLog): number => {
   return wakeupMoodScore + fuzzinessScore + bedtimeMoodScore;
 };
 
-export const SleepStats: FC<SleepStatsProps> = ({ logs }) => {
+export const SleepStats: FC<SleepStatsProps> = ({ logs, onDelete }) => {
   const [selectedDuration, setSelectedDuration] = useState<string | null>(null);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
 
@@ -79,10 +80,6 @@ export const SleepStats: FC<SleepStatsProps> = ({ logs }) => {
   const selectedLogs = selectedDuration
     ? logs.filter((log) => log.sleepDuration === selectedDuration)
     : [];
-    
-  const handleDeleteLog = (id: string) => {
-    setIsDialogOpen(false);
-  };
 
   return (
     <div className="space-y-4">
@@ -141,7 +138,7 @@ export const SleepStats: FC<SleepStatsProps> = ({ logs }) => {
             </AlertDialogDescription>
           </AlertDialogHeader>
           <div className="max-h-[60vh] overflow-y-auto pr-4">
-             <SleepLogList logs={selectedLogs} onDelete={handleDeleteLog} />
+             <SleepLogList logs={selectedLogs} onDelete={onDelete} />
           </div>
           <AlertDialogFooter>
             <AlertDialogCancel>Close</AlertDialogCancel>

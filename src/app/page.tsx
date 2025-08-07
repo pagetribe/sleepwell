@@ -115,7 +115,7 @@ const Home: FC = () => {
                 <SleepLogList logs={sleepLogs} onDelete={handleDeleteLog} defaultOpenId={defaultOpenId} />
               </TabsContent>
               <TabsContent value="stats">
-                <SleepStats logs={sleepLogs} />
+                <SleepStats logs={sleepLogs} onDelete={handleDeleteLog} />
               </TabsContent>
           </main>
           <div className="w-full fixed bottom-0 left-0 right-0 bg-background">

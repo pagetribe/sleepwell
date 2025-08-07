@@ -113,7 +113,7 @@ export const SleepLogForm: FC<SleepLogFormProps> = ({ onSave, existingLog, flow 
                 <FormItem>
                   <FormLabel className="flex items-center text-foreground/80"><Bed className="mr-2 h-4 w-4" />Bedtime</FormLabel>
                   <FormControl>
-                    <Input type="time" {...field} className="neumorphic-inset" />
+                    <Input type="time" {...field} className="neumorphic-inset text-xl" />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -126,7 +126,7 @@ export const SleepLogForm: FC<SleepLogFormProps> = ({ onSave, existingLog, flow 
                 <FormItem>
                   <FormLabel className="flex items-center text-foreground/80"><Sunrise className="mr-2 h-4 w-4" />Wake-up Time (planned)</FormLabel>
                   <FormControl>
-                    <Input type="time" {...field} className="neumorphic-inset" />
+                    <Input type="time" {...field} className="neumorphic-inset text-xl" />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -136,7 +136,7 @@ export const SleepLogForm: FC<SleepLogFormProps> = ({ onSave, existingLog, flow 
               control={form.control}
               name="bedtimeMood"
               render={({ field }) => (
-                <FormItem className="space-y-3">
+                <FormItem className="space-y-3 pt-6">
                   <FormLabel className="flex items-center text-foreground/80"><Moon className="mr-2 h-4 w-4" />End of Day Mood</FormLabel>
                   <FormControl>
                     <RadioGroup
