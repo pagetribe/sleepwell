@@ -1,4 +1,3 @@
-
 'use client';
 
 import { type FC, useEffect, useState } from 'react';
@@ -167,19 +166,6 @@ export const SleepLogForm: FC<SleepLogFormProps> = ({ onSave, existingLog, flow 
                 </FormItem>
               )}
             />
-             <FormField
-              control={form.control}
-              name="additionalInfo"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel className="flex items-center text-foreground/80"><Info className="mr-2 h-4 w-4" />Notes</FormLabel>
-                  <FormControl>
-                    <Textarea placeholder="Any other notes about your sleep..." {...field} className="neumorphic-inset"/>
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
           </>
         )}
 
@@ -287,6 +273,21 @@ export const SleepLogForm: FC<SleepLogFormProps> = ({ onSave, existingLog, flow 
             />
           </>
         )}
+        
+        {/* This field is now outside the conditional blocks and will show for both flows */}
+        <FormField
+          control={form.control}
+          name="additionalInfo"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel className="flex items-center text-foreground/80"><Info className="mr-2 h-4 w-4" />Notes</FormLabel>
+              <FormControl>
+                <Textarea placeholder="Any other notes about your sleep..." {...field} className="neumorphic-inset"/>
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
 
         <Button type="submit" className="w-full neumorphic-convex active:neumorphic-concave">
           <Save className="mr-2 h-4 w-4" /> Save Log
