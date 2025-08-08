@@ -1,4 +1,3 @@
-
 'use client';
 
 import { FC, useState, useEffect } from 'react';
@@ -90,6 +89,12 @@ const Home: FC = () => {
     setSleepLogs(sleepLogs.filter((log) => log.id !== id));
   };
 
+  const handleEditLog = (updatedLog: SleepLog) => {
+    setSleepLogs(logs =>
+      logs.map(log => (log.id === updatedLog.id ? updatedLog : log))
+    );
+  };
+
   const defaultOpenId = activeTab === 'history' 
     ? lastSavedLogId ?? (sleepLogs.length > 0 ? sleepLogs[0].id : null)
     : null;
@@ -112,7 +117,12 @@ const Home: FC = () => {
                 )}
               </TabsContent>
               <TabsContent value="history">
-                <SleepLogList logs={sleepLogs} onDelete={handleDeleteLog} defaultOpenId={defaultOpenId} />
+                <SleepLogList
+                  logs={sleepLogs}
+                  onDelete={handleDeleteLog}
+                  onEdit={handleEditLog}
+                  defaultOpenId={defaultOpenId}
+                />
               </TabsContent>
               <TabsContent value="stats">
                 <SleepStats logs={sleepLogs} onDelete={handleDeleteLog} />
