@@ -52,6 +52,15 @@ export const SleepLogList: FC<SleepLogListProps> = ({ logs, onDelete, onEdit, de
     return `${formattedHour}:${minute} ${ampm}`;
   };
 
+  const formatDate = (date: string) => {
+    if (!date) return '';
+    return new Date(date).toLocaleDateString('en-US', {
+      weekday: 'short',
+      month: 'short',
+      day: 'numeric',
+    });
+  };
+
   const defaultValues = defaultOpenId ? [defaultOpenId] : (logs.length > 0 ? [logs[0].id] : []);
 
   const [editingId, setEditingId] = useState<string | null>(null);

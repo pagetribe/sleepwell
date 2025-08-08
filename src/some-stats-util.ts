@@ -85,6 +85,14 @@ export const SleepStats: FC<SleepStatsProps> = ({ logs, onDelete }) => {
     ? logs.filter((log) => log.sleepDuration === selectedDuration)
     : [];
 
+  // Example: grouping logs by wakeup date
+  const logsByWakeupDate = logs.reduce((acc, log) => {
+    const wakeupDate = log.wakeup.slice(0, 10); // YYYY-MM-DD
+    if (!acc[wakeupDate]) acc[wakeupDate] = [];
+    acc[wakeupDate].push(log);
+    return acc;
+  }, {} as Record<string, SleepLog[]>);
+
   return (
     <div className="space-y-4">
       <CardHeader>

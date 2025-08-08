@@ -1,8 +1,8 @@
 export type SleepLog = {
   id: string;
   date: string;
-  bedtime: string;
-  wakeupTime: string;
+  bedtime: string; // ISO string or Date
+  wakeup: string;  // ISO string or Date
   bedtimeMood: number;
   wakeupMood: number;
   wokeUpDuringDream: boolean;
