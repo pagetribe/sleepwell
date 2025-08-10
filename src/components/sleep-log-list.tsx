@@ -13,7 +13,7 @@ import { useState } from 'react';
 interface SleepLogListProps {
   logs: SleepLog[];
   onDelete: (id: string) => void;
-  onEdit: (log: SleepLog) => void; // <-- add this
+  onEdit: (log: SleepLog) => void;
   defaultOpenId?: string | null;
 }
 
@@ -52,24 +52,15 @@ export const SleepLogList: FC<SleepLogListProps> = ({ logs, onDelete, onEdit, de
     return `${formattedHour}:${minute} ${ampm}`;
   };
 
-  const formatDate = (date: string) => {
-    if (!date) return '';
-    return new Date(date).toLocaleDateString('en-US', {
-      weekday: 'short',
-      month: 'short',
-      day: 'numeric',
-    });
-  };
-
   const defaultValues = defaultOpenId ? [defaultOpenId] : (logs.length > 0 ? [logs[0].id] : []);
+
+  const sortedLogs = [...logs].sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
 
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editData, setEditData] = useState<Partial<Record<keyof SleepLog, any>>>({});
 
-  // Helper to get the edited value or fallback to the original, but never default to 0 for unset
   function getEditValue<T>(editValue: T | undefined, originalValue: T): T | undefined {
     if (editValue === undefined || editValue === null || editValue === '') {
-      // If originalValue is undefined/null/empty, keep it as undefined
       if (originalValue === undefined || originalValue === null || originalValue === '') {
         return undefined;
       }
@@ -85,30 +76,16 @@ export const SleepLogList: FC<SleepLogListProps> = ({ logs, onDelete, onEdit, de
       </CardHeader>
       <CardContent className="space-y-2 px-0">
         <Accordion type="multiple" className="w-full" defaultValue={defaultValues}>
-          {logs.map((log) => {
-            // A sleep log is for the night of the day before the log's date.
-            // e.g., a log with date "2024-08-07" is for the night of August 6th.
-            // We add T00:00:00 to ensure the date is parsed in the local timezone.
+          {sortedLogs.map((log, index) => {
             const wakeUpDate = new Date(`${log.date}T00:00:00`);
-            const bedTimeDate = new Date(wakeUpDate);
-            bedTimeDate.setDate(wakeUpDate.getDate() - 1);
-
             const titleDateOptions: Intl.DateTimeFormatOptions = {
-              weekday: 'short',
-              month: 'short',
-              day: 'numeric',
-            };
-
-            const title = `${bedTimeDate.toLocaleDateString('en-US', titleDateOptions)} - ${wakeUpDate.toLocaleDateString('en-US', titleDateOptions)}`;
-
-            const detailDateOptions: Intl.DateTimeFormatOptions = {
               weekday: 'long',
               month: 'long',
               day: 'numeric',
             };
-            const bedTimeFullDate = bedTimeDate.toLocaleDateString('en-US', detailDateOptions);
-            const wakeUpFullDate = wakeUpDate.toLocaleDateString('en-US', detailDateOptions);
-
+            const title = wakeUpDate.toLocaleDateString('en-US', titleDateOptions);
+            const previousLog = index > 0 ? sortedLogs[index - 1] : null;
+            const sleepDuration = previousLog ? calculateDuration(previousLog.bedtime, log.wakeup) : log.sleepDuration;
             const isEditing = editingId === log.id;
 
             return (
@@ -121,12 +98,12 @@ export const SleepLogList: FC<SleepLogListProps> = ({ logs, onDelete, onEdit, de
                         <Clock className="h-4 w-4 mt-1 shrink-0" />
                         <div className="flex flex-col items-start">
                           <span className="font-bold text-foreground">
-                            {log.sleepDuration === 'In Progress'
-                              ? calculateDuration(log.bedtime, log.wakeupTime ?? new Date().toTimeString().slice(0,5))
-                              : log.sleepDuration}
+                            {sleepDuration}
                           </span>
-                          {log.sleepDuration === 'In Progress' && (
-                            <span className="text-xs text-yellow-500">In Progress...</span>
+                          {previousLog && (
+                            <span className="text-xs text-muted-foreground">
+                              bed: {formatTime(previousLog.bedtime)}, woke at {formatTime(log.wakeup)}
+                            </span>
                           )}
                         </div>
                       </div>
@@ -145,38 +122,32 @@ export const SleepLogList: FC<SleepLogListProps> = ({ logs, onDelete, onEdit, de
                           e.preventDefault();
                           onEdit({
                             ...log,
-                            bedtime: getEditValue(editData.bedtime, log.bedtime),
-                            wakeupTime: getEditValue(editData.wakeupTime, log.wakeupTime),
+                            bedtime: getEditValue(editData.bedtime, log.bedtime) ?? '',
+                            wakeup: getEditValue(editData.wakeup, log.wakeup) ?? '',
                             bedtimeMood: getEditValue(
                               editData.bedtimeMood !== undefined && editData.bedtimeMood !== ''
                                 ? Number(editData.bedtimeMood)
                                 : undefined,
-                              log.bedtimeMood !== undefined && log.bedtimeMood !== null && log.bedtimeMood !== 0
-                                ? log.bedtimeMood
-                                : undefined
-                            ),
+                              log.bedtimeMood
+                            ) ?? 0,
                             wakeupMood: getEditValue(
                               editData.wakeupMood !== undefined && editData.wakeupMood !== ''
                                 ? Number(editData.wakeupMood)
                                 : undefined,
-                              log.wakeupMood !== undefined && log.wakeupMood !== null && log.wakeupMood !== 0
-                                ? log.wakeupMood
-                                : undefined
-                            ),
+                              log.wakeupMood
+                            ) ?? 0,
                             fuzziness: getEditValue(
                               editData.fuzziness !== undefined && editData.fuzziness !== ''
                                 ? Number(editData.fuzziness)
                                 : undefined,
-                              log.fuzziness !== undefined && log.fuzziness !== null && log.fuzziness !== 0
-                                ? log.fuzziness
-                                : undefined
-                            ),
+                              log.fuzziness
+                            ) ?? 0,
                             wokeUpDuringDream: getEditValue(
                               editData.wokeUpDuringDream !== undefined
                                 ? (editData.wokeUpDuringDream === 'true' || editData.wokeUpDuringDream === true)
                                 : undefined,
                               log.wokeUpDuringDream
-                            ),
+                            ) ?? false,
                             additionalInfo: getEditValue(editData.additionalInfo, log.additionalInfo),
                           });
                           setEditingId(null);
@@ -187,7 +158,7 @@ export const SleepLogList: FC<SleepLogListProps> = ({ logs, onDelete, onEdit, de
                           <label className="block text-sm mb-1">Bedtime</label>
                           <input
                             type="time"
-                            value={editData.bedtime ?? log.bedtime}
+                            value={editData.bedtime ?? log.bedtime ?? ''}
                             onChange={e => setEditData(d => ({ ...d, bedtime: e.target.value }))}
                             className="input input-bordered w-full"
                           />
@@ -196,28 +167,19 @@ export const SleepLogList: FC<SleepLogListProps> = ({ logs, onDelete, onEdit, de
                           <label className="block text-sm mb-1">Wake-up Time</label>
                           <input
                             type="time"
-                            value={editData.wakeupTime ?? log.wakeupTime}
-                            onChange={e => setEditData(d => ({ ...d, wakeupTime: e.target.value }))}
+                            value={editData.wakeup ?? log.wakeup ?? ''}
+                            onChange={e => setEditData(d => ({ ...d, wakeup: e.target.value }))}
                             className="input input-bordered w-full"
                           />
                         </div>
                         <div>
-                          <label className="block text-sm mb-1">Bedtime Mood</label>
+                          <label className="block text-sm mb-1">Daytime Mood</label>
                           <input
                             type="number"
                             min={1}
                             max={5}
-                            value={
-                              editData.bedtimeMood !== undefined
-                                ? editData.bedtimeMood
-                                : (log.bedtimeMood !== undefined && log.bedtimeMood !== null && log.bedtimeMood !== 0
-                                    ? String(log.bedtimeMood)
-                                    : '')
-                            }
-                            onChange={e => setEditData(d => ({
-                              ...d,
-                              bedtimeMood: e.target.value
-                            }))}
+                            value={editData.bedtimeMood ?? log.bedtimeMood ?? ''}
+                            onChange={e => setEditData(d => ({ ...d, bedtimeMood: e.target.value }))}
                             className="input input-bordered w-full"
                           />
                         </div>
@@ -227,17 +189,8 @@ export const SleepLogList: FC<SleepLogListProps> = ({ logs, onDelete, onEdit, de
                             type="number"
                             min={1}
                             max={5}
-                            value={
-                              editData.wakeupMood !== undefined
-                                ? editData.wakeupMood
-                                : (log.wakeupMood !== undefined && log.wakeupMood !== null && log.wakeupMood !== 0
-                                    ? String(log.wakeupMood)
-                                    : '')
-                            }
-                            onChange={e => setEditData(d => ({
-                              ...d,
-                              wakeupMood: e.target.value
-                            }))}
+                            value={editData.wakeupMood ?? log.wakeupMood ?? ''}
+                            onChange={e => setEditData(d => ({ ...d, wakeupMood: e.target.value }))}
                             className="input input-bordered w-full"
                           />
                         </div>
@@ -247,28 +200,15 @@ export const SleepLogList: FC<SleepLogListProps> = ({ logs, onDelete, onEdit, de
                             type="number"
                             min={1}
                             max={5}
-                            value={
-                              editData.fuzziness !== undefined
-                                ? editData.fuzziness
-                                : (log.fuzziness !== undefined && log.fuzziness !== null && log.fuzziness !== 0
-                                    ? String(log.fuzziness)
-                                    : '')
-                            }
-                            onChange={e => setEditData(d => ({
-                              ...d,
-                              fuzziness: e.target.value
-                            }))}
+                            value={editData.fuzziness ?? log.fuzziness ?? ''}
+                            onChange={e => setEditData(d => ({ ...d, fuzziness: e.target.value }))}
                             className="input input-bordered w-full"
                           />
                         </div>
                         <div>
                           <label className="block text-sm mb-1">Woke Up During Dream</label>
                           <select
-                            value={
-                              editData.wokeUpDuringDream !== undefined
-                                ? String(editData.wokeUpDuringDream)
-                                : String(log.wokeUpDuringDream)
-                            }
+                            value={String(editData.wokeUpDuringDream ?? log.wokeUpDuringDream ?? 'false')}
                             onChange={e => setEditData(d => ({ ...d, wokeUpDuringDream: e.target.value === 'true' }))}
                             className="input input-bordered w-full"
                           >
@@ -282,6 +222,7 @@ export const SleepLogList: FC<SleepLogListProps> = ({ logs, onDelete, onEdit, de
                             value={editData.additionalInfo ?? log.additionalInfo ?? ''}
                             onChange={e => setEditData(d => ({ ...d, additionalInfo: e.target.value }))}
                             className="input input-bordered w-full"
+                            placeholder="Morning notes|Evening notes"
                           />
                         </div>
                         <div className="flex gap-2">
@@ -291,65 +232,57 @@ export const SleepLogList: FC<SleepLogListProps> = ({ logs, onDelete, onEdit, de
                       </form>
                     ) : (
                       <>
-                        {/* Evening Details */}
-                        <div className="space-y-3">
-                          <h4 className="font-semibold text-muted-foreground flex items-center gap-2">
-                            <Moon className="h-4 w-4" />
-                            <span>Evening - {bedTimeFullDate}</span>
-                          </h4>
-                          <div className="pl-6 space-y-2 text-base border-l-2 border-primary/20">
-                            <div className="flex items-center gap-2">
-                              <Bed className="h-4 w-4 text-primary" /> 
-                              <span className="text-muted-foreground">Bedtime:</span>
-                              <span className="font-semibold">{formatTime(log.bedtime)}</span>
-                            </div>
-                            <div className="flex items-center gap-2">
-                              <Moon className="h-4 w-4 text-primary" /> 
-                              <span className="text-muted-foreground">Mood:</span>
-                              <span className="font-semibold">{log.bedtimeMood > 0 ? `${log.bedtimeMood}/5` : '-'}</span>
-                            </div>
-                          </div>
-                        </div>
-
-                        {/* Morning Details */}
                         <div className="space-y-3">
                           <h4 className="font-semibold text-muted-foreground flex items-center gap-2">
                             <AlarmClock className="h-4 w-4" />
-                            <span>Morning - {wakeUpFullDate}</span>
+                            <span>Morning</span>
                           </h4>
                           <div className="pl-6 space-y-2 text-base border-l-2 border-primary/20">
                             <div className="flex items-center gap-2">
-                              <AlarmClock className="h-4 w-4 text-primary" /> 
-                              <span className="text-muted-foreground">Wake-up:</span>
-                              <span className="font-semibold">{formatTime(log.wakeupTime)}</span>
+                              <span className="text-muted-foreground w-24">Woke:</span>
+                              <span className="font-semibold">{formatTime(log.wakeup)}</span>
                             </div>
                             <div className="flex items-center gap-2">
-                              <AlarmClock className="h-4 w-4 text-primary" /> 
-                              <span className="text-muted-foreground">Mood:</span>
+                              <span className="text-muted-foreground w-24">Wake moode:</span>
                               <span className="font-semibold">{log.wakeupMood > 0 ? `${log.wakeupMood}/5` : '-'}</span>
                             </div>
                             <div className="flex items-center gap-2">
-                              <Cloudy className="h-4 w-4 text-primary" /> 
-                              <span className="text-muted-foreground">Fuzziness:</span>
+                              <span className="text-muted-foreground w-24">Fuzziness:</span>
                               <span className="font-semibold">{log.fuzziness > 0 ? `${log.fuzziness}/5` : '-'}</span>
                             </div>
                             <div className="flex items-center gap-2">
-                              <Brain className="h-4 w-4 text-primary" /> 
-                              <span className="text-muted-foreground">Mid-dream:</span>
+                              <span className="text-muted-foreground w-24">Mid-dream:</span>
                               <span className="font-semibold">{log.wokeUpDuringDream ? 'Yes' : 'No'}</span>
+                            </div>
+                            <div className="flex items-start gap-2">
+                              <span className="text-muted-foreground w-24 mt-1">Morning notes:</span>
+                              <span className="font-semibold flex-1">
+                                {log.additionalInfo && log.additionalInfo.split('|')[0] ? log.additionalInfo.split('|')[0] : <span className="italic text-muted-foreground/60">No notes</span>}
+                              </span>
                             </div>
                           </div>
                         </div>
-
-                        {/* Notes field styled like other fields */}
-                        <div className="flex items-center gap-2 mt-2">
-                          <Info className="h-4 w-4 text-primary" />
-                          <span className="text-muted-foreground">Notes:</span>
-                          <span className="font-semibold text-base">
-                            {log.additionalInfo && log.additionalInfo.trim() !== ''
-                              ? log.additionalInfo
-                              : <span className="italic text-muted-foreground/60">No notes</span>}
-                          </span>
+                        <div className="space-y-3">
+                          <h4 className="font-semibold text-muted-foreground flex items-center gap-2">
+                            <Moon className="h-4 w-4" />
+                            <span>Evening</span>
+                          </h4>
+                          <div className="pl-6 space-y-2 text-base border-l-2 border-primary/20">
+                            <div className="flex items-center gap-2">
+                              <span className="text-muted-foreground w-24">Bed:</span>
+                              <span className="font-semibold">{formatTime(log.bedtime)}</span>
+                            </div>
+                            <div className="flex items-center gap-2">
+                              <span className="text-muted-foreground w-24">Daytime mood:</span>
+                              <span className="font-semibold">{log.bedtimeMood > 0 ? `${log.bedtimeMood}/5` : '-'}</span>
+                            </div>
+                            <div className="flex items-start gap-2">
+                              <span className="text-muted-foreground w-24 mt-1">Evening notes:</span>
+                              <span className="font-semibold flex-1">
+                                {log.additionalInfo && log.additionalInfo.split('|')[1] ? log.additionalInfo.split('|')[1] : <span className="italic text-muted-foreground/60">No notes</span>}
+                              </span>
+                            </div>
+                          </div>
                         </div>
                         <CardFooter className="p-0 pt-4 flex justify-end gap-2">
                           <Button
@@ -373,7 +306,8 @@ export const SleepLogList: FC<SleepLogListProps> = ({ logs, onDelete, onEdit, de
                     )}
                   </div>
                 </AccordionContent>
-              </AccordionItem>);
+              </AccordionItem>
+            );
           })}
         </Accordion>
       </CardContent>
