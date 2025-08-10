@@ -63,10 +63,9 @@ export const SleepLogList: FC<SleepLogListProps> = ({ logs: rawLogs, onDelete, o
     return `${formattedHour}:${minute} ${ampm}`;
   };
 
-  const defaultValues = defaultOpenId ? [defaultOpenId] : (logs.length > 0 ? [logs[0].id] : []);
+  const sortedLogs = [...logs].sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
 
-  const sortedLogs = [...logs].sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
-
+  const defaultValues = defaultOpenId ? [defaultOpenId] : (sortedLogs.length > 0 ? [sortedLogs[0].id] : []);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editData, setEditData] = useState<Partial<Record<keyof SleepLog, any>>>({});
 
@@ -95,7 +94,7 @@ export const SleepLogList: FC<SleepLogListProps> = ({ logs: rawLogs, onDelete, o
               day: 'numeric',
             };
             const title = wakeUpDate.toLocaleDateString('en-US', titleDateOptions);
-            const previousLog = index > 0 ? sortedLogs[index - 1] : null;
+            const previousLog = index < sortedLogs.length - 1 ? sortedLogs[index + 1] : null;
             const sleepDuration = previousLog ? calculateDuration(previousLog.bedtime, log.wakeup) : log.sleepDuration;
             const isEditing = editingId === log.id;
 
