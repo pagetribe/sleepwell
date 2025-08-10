@@ -6,7 +6,7 @@ import { Button } from '@/components/ui/button';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
 import type { SleepLog } from '@/lib/types';
 import { MOOD_OPTIONS } from '@/lib/types';
-import { calculateDuration } from '@/lib/utils';
+import { calculateDuration } from '@/lib/utils'; // Assuming this utility calculates duration from two time strings
 import { AlarmClock, Bed, Brain, Clock, Cloudy, Info, Moon, Trash2, Pencil } from 'lucide-react';
 import { useState } from 'react';
 
@@ -94,8 +94,28 @@ export const SleepLogList: FC<SleepLogListProps> = ({ logs: rawLogs, onDelete, o
               day: 'numeric',
             };
             const title = wakeUpDate.toLocaleDateString('en-US', titleDateOptions);
+
             const previousLog = index < sortedLogs.length - 1 ? sortedLogs[index + 1] : null;
-            const sleepDuration = previousLog ? calculateDuration(previousLog.bedtime, log.wakeup) : log.sleepDuration;
+
+            const today = new Date();
+            const todayDateString = today.toISOString().slice(0, 10); // e.g., "2025-08-10"
+
+            const isLogForToday = log.date === todayDateString;
+            const morningNotes = log.additionalInfo?.split('|')[0] || '';
+
+            const hasMorningDetailsRecorded = (log.wakeupMood !== 0 && log.wakeupMood !== undefined && log.wakeupMood !== null) ||
+                                             (log.fuzziness !== 0 && log.fuzziness !== undefined && log.fuzziness !== null) ||
+                                             (morningNotes.trim() !== '');
+
+            // A log is "in progress" if it's for today AND morning details are NOT yet recorded
+            const isInProgress = isLogForToday && !hasMorningDetailsRecorded;
+
+            // sleepDuration is calculated for display for *completed* logs using the previous night's bedtime
+            const sleepDurationForCompleted = previousLog ? calculateDuration(previousLog.bedtime, log.wakeup) : log.sleepDuration;
+
+            // For "in progress" logs, calculate proposed duration using its own bedtime and wakeup (planned times)
+            const proposedSleepDuration = (log.bedtime && log.wakeup) ? calculateDuration(log.bedtime, log.wakeup) : '';
+
             const isEditing = editingId === log.id;
 
             return (
@@ -107,18 +127,42 @@ export const SleepLogList: FC<SleepLogListProps> = ({ logs: rawLogs, onDelete, o
                       <div className="flex items-start gap-2 text-base text-muted-foreground">
                         <Clock className="h-4 w-4 mt-1 shrink-0" />
                         <div className="flex flex-col items-start">
-                          <span className="font-bold text-foreground">
-                            {sleepDuration}
-                          </span>
-                          {previousLog && (
-                            <span className="text-xs text-muted-foreground">
-                              bed: {formatTime(previousLog.bedtime)}, woke at {formatTime(log.wakeup)}
-                            </span>
+                          {isInProgress ? (
+                            // Exactly matching the new image: "In Progress" followed by "proposed duration: X"
+                            <>
+                              <span className="font-bold text-foreground">In Progress</span>
+                              {proposedSleepDuration && ( // Only show if proposed duration is calculated
+                                <span className="text-xs text-muted-foreground">
+                                  proposed duration: {proposedSleepDuration}
+                                </span>
+                              )}
+                            </>
+                          ) : (
+                            // Display actual sleep duration and times for completed logs
+                            <>
+                              <span className="font-bold text-foreground">
+                                {sleepDurationForCompleted} {/* Use the calculated duration for completed logs */}
+                              </span>
+                              {/* Display bed/woke times for completed logs: */}
+                              {/* If there's a previous log (meaning this log represents a full night's sleep) */}
+                              {previousLog && (
+                                <span className="text-xs text-muted-foreground">
+                                  bed: {formatTime(previousLog.bedtime)}, woke at {formatTime(log.wakeup)}
+                                </span>
+                              )}
+                              {/* If it's the very first (oldest) completed log, display its own bedtime/wakeup */}
+                              {!previousLog && log.bedtime && log.wakeup && (
+                                  <span className="text-xs text-muted-foreground">
+                                    bed: {formatTime(log.bedtime)}, woke at {formatTime(log.wakeup)}
+                                  </span>
+                              )}
+                            </>
                           )}
                         </div>
                       </div>
                     </div>
                     <div className="flex items-center gap-2">
+                      {/* MoodIndicator for Wake-up mood, will show '-' if value is 0, null, or undefined */}
                       <MoodIndicator value={log.wakeupMood} />
                     </div>
                   </div>
@@ -267,7 +311,7 @@ export const SleepLogList: FC<SleepLogListProps> = ({ logs: rawLogs, onDelete, o
                             <div className="flex items-start gap-2">
                               <span className="text-muted-foreground w-24 mt-1">Morning notes:</span>
                               <span className="font-semibold flex-1">
-                                {log.additionalInfo && log.additionalInfo.split('|')[0] ? log.additionalInfo.split('|')[0] : <span className="italic text-muted-foreground/60">No notes</span>}
+                                {morningNotes.trim() ? morningNotes : <span className="italic text-muted-foreground/60">No notes</span>}
                               </span>
                             </div>
                           </div>
