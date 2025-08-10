@@ -26,7 +26,18 @@ const MoodIndicator: FC<{ value: number }> = ({ value }) => {
   return <span className="text-3xl" title={mood.description}>{mood.label}</span>;
 };
 
-export const SleepLogList: FC<SleepLogListProps> = ({ logs, onDelete, onEdit, defaultOpenId = null }) => {
+export const SleepLogList: FC<SleepLogListProps> = ({ logs: rawLogs, onDelete, onEdit, defaultOpenId = null }) => {
+  // Normalize logs to handle legacy `wakeupTime` property from older data structures.
+  const logs = rawLogs.map(log => {
+    const logWithLegacyProp = log as SleepLog & { wakeupTime?: string };
+    if (logWithLegacyProp.wakeupTime && !logWithLegacyProp.wakeup) {
+      // eslint-disable-next-line @typescript-eslint/no-unused-vars
+      const { wakeupTime, ...rest } = logWithLegacyProp;
+      return { ...rest, wakeup: wakeupTime } as SleepLog;
+    }
+    return log;
+  });
+
   if (logs.length === 0) {
     return (
       <div>
@@ -243,7 +254,7 @@ export const SleepLogList: FC<SleepLogListProps> = ({ logs, onDelete, onEdit, de
                               <span className="font-semibold">{formatTime(log.wakeup)}</span>
                             </div>
                             <div className="flex items-center gap-2">
-                              <span className="text-muted-foreground w-24">Wake moode:</span>
+                              <span className="text-muted-foreground w-24">Wake-up mood:</span>
                               <span className="font-semibold">{log.wakeupMood > 0 ? `${log.wakeupMood}/5` : '-'}</span>
                             </div>
                             <div className="flex items-center gap-2">
