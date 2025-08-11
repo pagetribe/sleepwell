@@ -6,8 +6,15 @@ import { Button } from '@/components/ui/button';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
 import type { SleepLog } from '@/lib/types';
 import { MOOD_OPTIONS } from '@/lib/types';
-import { calculateDuration } from '@/lib/utils'; // Assuming this utility calculates duration from two time strings
-import { AlarmClock, Bed, Brain, Clock, Cloudy, Info, Moon, Trash2, Pencil } from 'lucide-react';
+import { calculateDuration } from '@/lib/utils';
+import { 
+  ClockIcon,
+  MoonIcon,
+  Pencil1Icon,
+  TrashIcon,
+  InfoCircledIcon,
+  BellIcon,
+} from '@radix-ui/react-icons';
 import { useState } from 'react';
 
 interface SleepLogListProps {
@@ -125,7 +132,7 @@ export const SleepLogList: FC<SleepLogListProps> = ({ logs: rawLogs, onDelete, o
                     <div className="flex flex-col text-left">
                       <span className="text-sm text-muted-foreground mb-3">{title}</span>
                       <div className="flex items-start gap-2 text-base text-muted-foreground">
-                        <Clock className="h-4 w-4 mt-1 shrink-0" />
+                        <ClockIcon className="h-4 w-4 mt-1 shrink-0" />
                         <div className="flex flex-col items-start">
                           {isInProgress ? (
                             // Exactly matching the new image: "In Progress" followed by "proposed duration: X"
@@ -288,7 +295,7 @@ export const SleepLogList: FC<SleepLogListProps> = ({ logs: rawLogs, onDelete, o
                       <>
                         <div className="space-y-3">
                           <h4 className="font-semibold text-muted-foreground flex items-center gap-2">
-                            <AlarmClock className="h-4 w-4" />
+                            <BellIcon className="h-4 w-4" />
                             <span>Morning</span>
                           </h4>
                           <div className="pl-6 space-y-2 text-base border-l-2 border-primary/20">
@@ -318,7 +325,7 @@ export const SleepLogList: FC<SleepLogListProps> = ({ logs: rawLogs, onDelete, o
                         </div>
                         <div className="space-y-3">
                           <h4 className="font-semibold text-muted-foreground flex items-center gap-2">
-                            <Moon className="h-4 w-4" />
+                            <MoonIcon className="h-4 w-4" />
                             <span>Evening</span>
                           </h4>
                           <div className="pl-6 space-y-2 text-base border-l-2 border-primary/20">
@@ -349,10 +356,10 @@ export const SleepLogList: FC<SleepLogListProps> = ({ logs: rawLogs, onDelete, o
                             className="h-8 w-8 neumorphic-convex active:neumorphic-concave"
                           >
                             <span className="sr-only">Edit</span>
-                            <Pencil className="h-4 w-4" />
+                            <Pencil1Icon className="h-4 w-4" />
                           </Button>
                           <Button variant="destructive" size="icon" onClick={() => onDelete(log.id)} className="h-8 w-8 neumorphic-convex active:neumorphic-concave">
-                            <Trash2 className="h-4 w-4" />
+                            <TrashIcon className="h-4 w-4" />
                             <span className="sr-only">Delete</span>
                           </Button>
                         </CardFooter>

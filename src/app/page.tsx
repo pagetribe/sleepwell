@@ -1,7 +1,7 @@
 'use client';
 
 import { FC, useState, useEffect } from 'react';
-import { Moon, History, BarChart2 } from 'lucide-react';
+import { MoonIcon, ReaderIcon, BarChartIcon } from '@radix-ui/react-icons';
 
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { SleepLogForm } from '@/components/sleep-log-form';
@@ -50,7 +50,7 @@ const Home: FC = () => {
             ? { 
                 ...log, 
                 ...logData, 
-                sleepDuration: calculateDuration(log.bedtime, logData.wakeupTime || log.wakeupTime) 
+                sleepDuration: calculateDuration(log.bedtime, logData.wakeup || log.wakeup) 
               } 
             : log
         )
@@ -69,7 +69,7 @@ const Home: FC = () => {
         date: nextDayStr,
         bedtime: logData.bedtime || '',
         bedtimeMood: logData.bedtimeMood || 0,
-        wakeupTime: logData.wakeupTime || '',
+        wakeup: logData.wakeup || '',
         additionalInfo: logData.additionalInfo || '',
         wakeupMood: 0,
         fuzziness: 0,
@@ -90,8 +90,8 @@ const Home: FC = () => {
   };
 
   const handleEditLog = (updatedLog: SleepLog) => {
-    setSleepLogs(logs =>
-      logs.map(log => (log.id === updatedLog.id ? updatedLog : log))
+    setSleepLogs(
+      sleepLogs.map(log => (log.id === updatedLog.id ? updatedLog : log))
     );
   };
 
@@ -132,13 +132,13 @@ const Home: FC = () => {
             <div className="max-w-md mx-auto px-8 sm:px-10 md:px-12 py-4">
               <TabsList className="grid w-full grid-cols-3 p-1 gap-4">
                   <TabsTrigger value="log" className="px-8">
-                    <Moon className="h-5 w-5" />
+                    <MoonIcon className="h-5 w-5" />
                   </TabsTrigger>
                   <TabsTrigger value="history" className="px-8">
-                    <History className="h-5 w-5" />
+                    <ReaderIcon className="h-5 w-5" />
                   </TabsTrigger>
                   <TabsTrigger value="stats" className="px-8">
-                    <BarChart2 className="h-5 w-5" />
+                    <BarChartIcon className="h-5 w-5" />
                   </TabsTrigger>
                 </TabsList>
             </div>

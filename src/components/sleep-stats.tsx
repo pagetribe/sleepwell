@@ -5,7 +5,7 @@ import { FC, useState } from 'react';
 import { Card, CardHeader, CardTitle, CardContent, CardDescription } from '@/components/ui/card';
 import type { SleepLog } from '@/lib/types';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
-import { Award, Clock } from 'lucide-react';
+import { StarIcon, ClockIcon } from '@radix-ui/react-icons';
 import {
   AlertDialog,
   AlertDialogContent,
@@ -43,12 +43,12 @@ function buildNightRecords(logs: SleepLog[]) {
     const evening = sorted[i];
     const morning = sorted[i + 1];
     // Only pair if both have required fields
-    if (evening.bedtime && morning.wakeupTime) {
+    if (evening.bedtime && morning.wakeup) {
       // Calculate duration
       const [bedHour, bedMin] = evening.bedtime.split(":").map(Number);
-      const [wakeHour, wakeMin] = morning.wakeupTime.split(":").map(Number);
+      const [wakeHour, wakeMin] = morning.wakeup.split(":").map(Number);
       const bedDate = new Date(`${evening.date}T${evening.bedtime}`);
-      const wakeDate = new Date(`${morning.date}T${morning.wakeupTime}`);
+      const wakeDate = new Date(`${morning.date}T${morning.wakeup}`);
       let durationMs = wakeDate.getTime() - bedDate.getTime();
       if (durationMs < 0) durationMs += 24 * 60 * 60 * 1000; // handle overnight
       const hours = Math.floor(durationMs / (60 * 60 * 1000));
@@ -58,7 +58,7 @@ function buildNightRecords(logs: SleepLog[]) {
         nightStart: evening.date,
         nightEnd: morning.date,
         bedtime: evening.bedtime,
-        wakeupTime: morning.wakeupTime,
+        wakeupTime: morning.wakeup,
         sleepDuration,
         bedtimeMood: evening.bedtimeMood,
         bedtimeNotes: evening.additionalInfo || '',
@@ -154,7 +154,7 @@ export const SleepStats: FC<SleepStatsProps> = ({ logs, onDelete }) => {
         </CardHeader>
         <CardContent className="flex flex-col items-center justify-center space-y-4">
           <div className="flex items-center gap-2 text-3xl font-bold text-primary">
-            <Award className="h-10 w-10" />
+            <StarIcon className="h-10 w-10" />
             <span>{bestDuration.name}</span>
           </div>
           <p className="text-center text-muted-foreground text-sm">
@@ -240,7 +240,7 @@ export const SleepStats: FC<SleepStatsProps> = ({ logs, onDelete }) => {
       <AlertDialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
         <AlertDialogContent className="max-w-md w-full neumorphic-flat">
           <AlertDialogHeader>
-            <AlertDialogTitle className="flex items-center"><Clock className="mr-2 h-6 w-6" />Night Details</AlertDialogTitle>
+            <AlertDialogTitle className="flex items-center"><ClockIcon className="mr-2 h-6 w-6" />Night Details</AlertDialogTitle>
             <AlertDialogDescription>
               Details for the selected night.
             </AlertDialogDescription>
