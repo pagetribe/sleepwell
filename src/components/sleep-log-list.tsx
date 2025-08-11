@@ -34,15 +34,21 @@ const MoodIndicator: FC<{ value: number }> = ({ value }) => {
 };
 
 export const SleepLogList: FC<SleepLogListProps> = ({ logs: rawLogs, onDelete, onEdit, defaultOpenId = null }) => {
-  // Normalize logs to handle legacy `wakeup` property from older data structures.
+  // Normalize logs to handle legacy `wakeup` and `additionalInfo` properties from older data structures.
   const logs = rawLogs.map(log => {
-    const logWithLegacyProp = log as SleepLog & { wakeup?: string };
-    if (logWithLegacyProp.wakeup && !logWithLegacyProp.wakeup) {
-      // eslint-disable-next-line @typescript-eslint/no-unused-vars
-      const { wakeup, ...rest } = logWithLegacyProp;
-      return { ...rest, wakeup: wakeup } as SleepLog;
+    const logWithLegacyProps = log as SleepLog & { wakeup?: string; additionalInfo?: string };
+    let newLog: SleepLog = { ...log };
+
+    if (logWithLegacyProps.wakeup && !newLog.wakeup) {
+      newLog.wakeup = logWithLegacyProps.wakeup;
     }
-    return log;
+
+    if (logWithLegacyProps.additionalInfo !== undefined && newLog.morningNotes === undefined && newLog.eveningNotes === undefined) {
+      const [morning, evening] = logWithLegacyProps.additionalInfo.split('|');
+      newLog.morningNotes = morning || undefined;
+      newLog.eveningNotes = evening || undefined;
+    }
+    return newLog;
   });
 
   if (logs.length === 0) {
@@ -76,7 +82,7 @@ export const SleepLogList: FC<SleepLogListProps> = ({ logs: rawLogs, onDelete, o
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editData, setEditData] = useState<Partial<Record<keyof SleepLog, any>>>({});
 
-  function getEditValue<T>(editValue: T | undefined, originalValue: T): T | undefined {
+  function getEditValue<T>(editValue: T | undefined, originalValue: T | undefined): T | undefined {
     if (editValue === undefined || editValue === null || editValue === '') {
       if (originalValue === undefined || originalValue === null || originalValue === '') {
         return undefined;
@@ -108,11 +114,10 @@ export const SleepLogList: FC<SleepLogListProps> = ({ logs: rawLogs, onDelete, o
             const todayDateString = today.toISOString().slice(0, 10); // e.g., "2025-08-10"
 
             const isLogForToday = log.date === todayDateString;
-            const morningNotes = log.additionalInfo?.split('|')[0] || '';
 
             const hasMorningDetailsRecorded = (log.wakeupMood !== 0 && log.wakeupMood !== undefined && log.wakeupMood !== null) ||
                                              (log.fuzziness !== 0 && log.fuzziness !== undefined && log.fuzziness !== null) ||
-                                             (morningNotes.trim() !== '');
+                                             (log.morningNotes && log.morningNotes.trim() !== '');
 
             // A log is "in progress" if it's for today AND morning details are NOT yet recorded
             const isInProgress = isLogForToday && !hasMorningDetailsRecorded;
@@ -211,7 +216,8 @@ export const SleepLogList: FC<SleepLogListProps> = ({ logs: rawLogs, onDelete, o
                                 : undefined,
                               log.wokeUpDuringDream
                             ) ?? false,
-                            additionalInfo: getEditValue(editData.additionalInfo, log.additionalInfo),
+                            morningNotes: getEditValue(editData.morningNotes, log.morningNotes),
+                            eveningNotes: getEditValue(editData.eveningNotes, log.eveningNotes),
                           });
                           setEditingId(null);
                           setEditData({});
@@ -280,12 +286,21 @@ export const SleepLogList: FC<SleepLogListProps> = ({ logs: rawLogs, onDelete, o
                           </select>
                         </div>
                         <div>
-                          <label className="block text-sm mb-1">Notes</label>
+                          <label className="block text-sm mb-1">Morning Notes</label>
                           <textarea
-                            value={editData.additionalInfo ?? log.additionalInfo ?? ''}
-                            onChange={e => setEditData(d => ({ ...d, additionalInfo: e.target.value }))}
+                            value={editData.morningNotes ?? log.morningNotes ?? ''}
+                            onChange={e => setEditData(d => ({ ...d, morningNotes: e.target.value }))}
                             className="input input-bordered w-full"
-                            placeholder="Morning notes|Evening notes"
+                            placeholder="Notes from the morning"
+                          />
+                        </div>
+                        <div>
+                          <label className="block text-sm mb-1">Evening Notes</label>
+                          <textarea
+                            value={editData.eveningNotes ?? log.eveningNotes ?? ''}
+                            onChange={e => setEditData(d => ({ ...d, eveningNotes: e.target.value }))}
+                            className="input input-bordered w-full"
+                            placeholder="Notes from the evening"
                           />
                         </div>
                         <div className="flex gap-2">
@@ -320,7 +335,7 @@ export const SleepLogList: FC<SleepLogListProps> = ({ logs: rawLogs, onDelete, o
                             <div className="flex items-start gap-2">
                               <span className="text-muted-foreground w-24 mt-1">Morning notes:</span>
                               <span className="font-semibold flex-1">
-                                {morningNotes.trim() ? morningNotes : <span className="italic text-muted-foreground/60">No notes</span>}
+                                {log.morningNotes && log.morningNotes.trim() ? log.morningNotes : <span className="italic text-muted-foreground/60">No notes</span>}
                               </span>
                             </div>
                           </div>
@@ -342,7 +357,7 @@ export const SleepLogList: FC<SleepLogListProps> = ({ logs: rawLogs, onDelete, o
                             <div className="flex items-start gap-2">
                               <span className="text-muted-foreground w-24 mt-1">Evening notes:</span>
                               <span className="font-semibold flex-1">
-                                {log.additionalInfo && log.additionalInfo.split('|')[1] ? log.additionalInfo.split('|')[1] : <span className="italic text-muted-foreground/60">No notes</span>}
+                                {log.eveningNotes && log.eveningNotes.trim() ? log.eveningNotes : <span className="italic text-muted-foreground/60">No notes</span>}
                               </span>
                             </div>
                           </div>

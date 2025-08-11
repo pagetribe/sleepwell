@@ -62,7 +62,7 @@ const Home: FC = () => {
       if (now.getHours() >= 18) {
           nextDay.setDate(now.getDate() + 1);
       }
-      const nextDayStr = nextDay.toLocaleDateString('en-CA');
+      const nextDayStr = nextDay.toLocaleDateString('en-AU');
 
       const newLog: SleepLog = {
         id: new Date().toISOString(),
@@ -70,10 +70,11 @@ const Home: FC = () => {
         bedtime: logData.bedtime || '',
         bedtimeMood: logData.bedtimeMood || 0,
         wakeup: logData.wakeup || '',
-        additionalInfo: logData.additionalInfo || '',
+        morningNotes: logData.morningNotes || undefined,
+        eveningNotes: logData.eveningNotes || undefined,
         wakeupMood: 0,
         fuzziness: 0,
-        wokeUpDuringDream: false,
+        wokeUpDuringDream: logData.wokeUpDuringDream,
         sleepDuration: 'In Progress',
       };
       

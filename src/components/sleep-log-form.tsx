@@ -27,7 +27,8 @@ const formSchema = z.object({
   bedtime: z.string().optional(),
   wakeup: z.string().optional(),
   bedtimeMood: z.string().optional(),
-  additionalInfo: z.string().optional(),
+  morningNotes: z.string().optional(),
+  eveningNotes: z.string().optional(),
   wakeupMood: z.string().optional(),
   fuzziness: z.number().optional(),
   wokeUpDuringDream: z.boolean().optional(),
@@ -44,11 +45,12 @@ export const SleepLogForm: FC<SleepLogFormProps> = ({ onSave, existingLog, flow 
       id: undefined,
       bedtime: '',
       bedtimeMood: '3',
-      additionalInfo: '',
+      morningNotes: '',
+      eveningNotes: '',
       wakeup: '06:30',
       wakeupMood: '3',
       fuzziness: 3,
-      wokeUpDuringDream: false,
+      wokeUpDuringDream: undefined,
     },
   });
 
@@ -59,10 +61,11 @@ export const SleepLogForm: FC<SleepLogFormProps> = ({ onSave, existingLog, flow 
         bedtime: existingLog.bedtime,
         wakeup: existingLog.wakeup || '06:30',
         bedtimeMood: String(existingLog.bedtimeMood),
-        additionalInfo: existingLog.additionalInfo,
+        morningNotes: existingLog.morningNotes,
+        eveningNotes: existingLog.eveningNotes,
         wakeupMood: String(existingLog.wakeupMood || 3),
         fuzziness: existingLog.fuzziness || 3,
-        wokeUpDuringDream: existingLog.wokeUpDuringDream || false,
+        wokeUpDuringDream: existingLog.wokeUpDuringDream,
       });
     } else if (flow === 'evening') {
       const now = new Date();
@@ -74,10 +77,11 @@ export const SleepLogForm: FC<SleepLogFormProps> = ({ onSave, existingLog, flow 
         bedtime: `${hours}:${minutes}`,
         wakeup: '06:30',
         bedtimeMood: '3',
-        additionalInfo: '',
+        morningNotes: '',
+        eveningNotes: '',
         wakeupMood: '3',
         fuzziness: 3,
-        wokeUpDuringDream: false,
+        wokeUpDuringDream: undefined,
       });
     }
   }, [flow, existingLog, form]);
@@ -89,6 +93,8 @@ export const SleepLogForm: FC<SleepLogFormProps> = ({ onSave, existingLog, flow 
       id: existingLog?.id,
       bedtimeMood: parseInt(data.bedtimeMood || '0', 10),
       wakeupMood: parseInt(data.wakeupMood || '0', 10),
+      morningNotes: data.morningNotes || undefined,
+      eveningNotes: data.eveningNotes || undefined,
     });
   }
   
@@ -264,7 +270,7 @@ export const SleepLogForm: FC<SleepLogFormProps> = ({ onSave, existingLog, flow 
                   </div>
                   <FormControl>
                     <Switch
-                      checked={field.value}
+                      checked={field.value ?? false}
                       onCheckedChange={field.onChange}
                     />
                   </FormControl>
@@ -274,20 +280,37 @@ export const SleepLogForm: FC<SleepLogFormProps> = ({ onSave, existingLog, flow 
           </>
         )}
         
-        {/* This field is now outside the conditional blocks and will show for both flows */}
-        <FormField
-          control={form.control}
-          name="additionalInfo"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel className="flex items-center text-foreground/80"><InfoCircledIcon className="mr-2 h-4 w-4" />Notes</FormLabel>
-              <FormControl>
-                <Textarea placeholder="Any other notes about your sleep..." {...field} className="neumorphic-inset"/>
-              </FormControl>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
+        {flow === 'morning' && (
+          <FormField
+            control={form.control}
+            name="morningNotes"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel className="flex items-center text-foreground/80"><InfoCircledIcon className="mr-2 h-4 w-4" />Morning Notes</FormLabel>
+                <FormControl>
+                  <Textarea placeholder="Notes from the morning" {...field} className="neumorphic-inset"/>
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+        )}
+
+        {flow === 'evening' && (
+          <FormField
+            control={form.control}
+            name="eveningNotes"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel className="flex items-center text-foreground/80"><InfoCircledIcon className="mr-2 h-4 w-4" />Evening Notes</FormLabel>
+                <FormControl>
+                  <Textarea placeholder="Notes from the evening" {...field} className="neumorphic-inset"/>
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+        )}
 
         <Button type="submit" className="w-full neumorphic-convex active:neumorphic-concave">
           <DownloadIcon className="mr-2 h-4 w-4" /> Save Log
