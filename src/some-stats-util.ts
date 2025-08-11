@@ -4,7 +4,7 @@ import { FC, useState } from 'react';
 import { Card, CardHeader, CardTitle, CardContent, CardDescription } from '@/components/ui/card';
 import type { SleepLog } from '@/lib/types';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
-import { Award, Clock } from 'lucide-react';
+import { StarIcon, ClockIcon } from '@radix-ui/react-icons';
 import {
   AlertDialog,
   AlertDialogContent,
@@ -110,7 +110,7 @@ export const SleepStats: FC<SleepStatsProps> = ({ logs, onDelete }) => {
         </CardHeader>
         <CardContent className="flex flex-col items-center justify-center space-y-4">
             <div className="flex items-center gap-2 text-3xl font-bold text-primary">
-                <Award className="h-10 w-10" />
+                <StarIcon className="h-10 w-10" />
                 <span>{bestDuration.name}</span>
             </div>
             <p className="text-center text-muted-foreground text-sm">
@@ -149,7 +149,7 @@ export const SleepStats: FC<SleepStatsProps> = ({ logs, onDelete }) => {
       <AlertDialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
         <AlertDialogContent className="max-w-md w-full neumorphic-flat">
           <AlertDialogHeader>
-            <AlertDialogTitle className="flex items-center"><Clock className="mr-2 h-6 w-6" />Sleep Logs for {selectedDuration}</AlertDialogTitle>
+            <AlertDialogTitle className="flex items-center"><ClockIcon className="mr-2 h-6 w-6" />Sleep Logs for {selectedDuration}</AlertDialogTitle>
             <AlertDialogDescription>
               Here are the detailed sleep logs for the duration you selected.
             </AlertDialogDescription>

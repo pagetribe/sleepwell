@@ -5,8 +5,9 @@ export type SleepLog = {
   wakeup: string;  // ISO string or Date
   bedtimeMood: number;
   wakeupMood: number;
-  wokeUpDuringDream: boolean;
-  additionalInfo?: string;
+  wokeUpDuringDream?: boolean | null;
+  morningNotes?: string;
+  eveningNotes?: string;
   fuzziness: number;
   sleepDuration: string;
 };

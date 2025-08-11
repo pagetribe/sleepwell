@@ -8,17 +8,11 @@ module.exports = {
     '^components/(.*)$': '<rootDir>/src/components/$1',
     '^lib/(.*)$': '<rootDir>/src/lib/$1',
     '^hooks/(.*)$': '<rootDir>/src/hooks/$1',
-    '^lucide-react$': 'jest-transform-stub',
+    '^@radix-ui/react-icons(.*)$': '<rootDir>/__mocks__/fileMock.js',
   },
   testPathIgnorePatterns: ['/node_modules/', '/.next/'],
   transform: {
-    '^.+\\.(js|jsx|ts|tsx)$': ['babel-jest', {
-      presets: [
-        ['@babel/preset-env', { targets: { node: 'current' } }],
-        '@babel/preset-react',
-        '@babel/preset-typescript',
-      ],
-    }],
+    '^.+\.(js|jsx|ts|tsx)$': 'babel-jest',
   },
   transformIgnorePatterns: ['/node_modules/'],
 };

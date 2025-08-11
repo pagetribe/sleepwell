@@ -2,6 +2,7 @@ import * as React from "react"
 
 import { cn } from "@/lib/utils"
 
+// Card remains a div by default
 const Card = React.forwardRef<
   HTMLDivElement,
   React.HTMLAttributes<HTMLDivElement>
@@ -17,6 +18,7 @@ const Card = React.forwardRef<
 ))
 Card.displayName = "Card"
 
+// CardHeader remains a div by default
 const CardHeader = React.forwardRef<
   HTMLDivElement,
   React.HTMLAttributes<HTMLDivElement>
@@ -29,11 +31,17 @@ const CardHeader = React.forwardRef<
 ))
 CardHeader.displayName = "CardHeader"
 
+// --- MODIFIED CardTitle COMPONENT ---
+// 1. Define the props type for CardTitle to include an 'as' prop
+interface CardTitleProps extends React.HTMLAttributes<HTMLElement> { // Extend HTMLElement for general attributes
+  as?: React.ElementType; // New prop to specify the HTML element type
+}
+
 const CardTitle = React.forwardRef<
-  HTMLDivElement,
-  React.HTMLAttributes<HTMLDivElement>
->(({ className, ...props }, ref) => (
-  <div
+  HTMLElement, // Change ref type to HTMLElement to be generic
+  CardTitleProps // Use the new interface for props
+>(({ className, as: Component = "div", ...props }, ref) => ( // Destructure 'as' and provide 'div' as default
+  <Component // Render the dynamic component
     ref={ref}
     className={cn(
       "text-2xl font-semibold leading-none tracking-tight",
@@ -43,7 +51,9 @@ const CardTitle = React.forwardRef<
   />
 ))
 CardTitle.displayName = "CardTitle"
+// --- END MODIFIED CardTitle COMPONENT ---
 
+// CardDescription remains a div by default
 const CardDescription = React.forwardRef<
   HTMLDivElement,
   React.HTMLAttributes<HTMLDivElement>
@@ -56,6 +66,7 @@ const CardDescription = React.forwardRef<
 ))
 CardDescription.displayName = "CardDescription"
 
+// CardContent remains a div by default
 const CardContent = React.forwardRef<
   HTMLDivElement,
   React.HTMLAttributes<HTMLDivElement>
@@ -64,6 +75,7 @@ const CardContent = React.forwardRef<
 ))
 CardContent.displayName = "CardContent"
 
+// CardFooter remains a div by default
 const CardFooter = React.forwardRef<
   HTMLDivElement,
   React.HTMLAttributes<HTMLDivElement>

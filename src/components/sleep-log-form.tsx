@@ -4,7 +4,7 @@ import { type FC, useEffect, useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
-import { Bed, Sunrise, Save, Moon, Cloudy, Info } from 'lucide-react';
+import { MoonIcon, SunIcon, DownloadIcon, CodeIcon, InfoCircledIcon } from '@radix-ui/react-icons';
 
 import { Button } from '@/components/ui/button';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
@@ -25,9 +25,10 @@ interface SleepLogFormProps {
 const formSchema = z.object({
   id: z.string().optional(),
   bedtime: z.string().optional(),
-  wakeupTime: z.string().optional(),
+  wakeup: z.string().optional(),
   bedtimeMood: z.string().optional(),
-  additionalInfo: z.string().optional(),
+  morningNotes: z.string().optional(),
+  eveningNotes: z.string().optional(),
   wakeupMood: z.string().optional(),
   fuzziness: z.number().optional(),
   wokeUpDuringDream: z.boolean().optional(),
@@ -44,11 +45,12 @@ export const SleepLogForm: FC<SleepLogFormProps> = ({ onSave, existingLog, flow 
       id: undefined,
       bedtime: '',
       bedtimeMood: '3',
-      additionalInfo: '',
-      wakeupTime: '06:30',
+      morningNotes: '',
+      eveningNotes: '',
+      wakeup: '06:30',
       wakeupMood: '3',
       fuzziness: 3,
-      wokeUpDuringDream: false,
+      wokeUpDuringDream: undefined,
     },
   });
 
@@ -57,12 +59,13 @@ export const SleepLogForm: FC<SleepLogFormProps> = ({ onSave, existingLog, flow 
       form.reset({
         id: existingLog.id,
         bedtime: existingLog.bedtime,
-        wakeupTime: existingLog.wakeupTime || '06:30',
+        wakeup: existingLog.wakeup || '06:30',
         bedtimeMood: String(existingLog.bedtimeMood),
-        additionalInfo: existingLog.additionalInfo,
+        morningNotes: existingLog.morningNotes,
+        eveningNotes: existingLog.eveningNotes,
         wakeupMood: String(existingLog.wakeupMood || 3),
         fuzziness: existingLog.fuzziness || 3,
-        wokeUpDuringDream: existingLog.wokeUpDuringDream || false,
+        wokeUpDuringDream: existingLog.wokeUpDuringDream ?? false,
       });
     } else if (flow === 'evening') {
       const now = new Date();
@@ -72,12 +75,13 @@ export const SleepLogForm: FC<SleepLogFormProps> = ({ onSave, existingLog, flow 
       form.reset({
         id: undefined,
         bedtime: `${hours}:${minutes}`,
-        wakeupTime: '06:30',
+        wakeup: '06:30',
         bedtimeMood: '3',
-        additionalInfo: '',
+        morningNotes: '',
+        eveningNotes: '',
         wakeupMood: '3',
         fuzziness: 3,
-        wokeUpDuringDream: false,
+        wokeUpDuringDream: undefined,
       });
     }
   }, [flow, existingLog, form]);
@@ -89,6 +93,8 @@ export const SleepLogForm: FC<SleepLogFormProps> = ({ onSave, existingLog, flow 
       id: existingLog?.id,
       bedtimeMood: parseInt(data.bedtimeMood || '0', 10),
       wakeupMood: parseInt(data.wakeupMood || '0', 10),
+      morningNotes: data.morningNotes || undefined,
+      eveningNotes: data.eveningNotes || undefined,
     });
   }
   
@@ -110,7 +116,7 @@ export const SleepLogForm: FC<SleepLogFormProps> = ({ onSave, existingLog, flow 
               name="bedtime"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel className="flex items-center text-foreground/80"><Bed className="mr-2 h-4 w-4" />Bedtime</FormLabel>
+                  <FormLabel className="flex items-center text-foreground/80"><MoonIcon className="mr-2 h-4 w-4" />Bedtime</FormLabel>
                   <FormControl>
                     <Input type="time" {...field} className="neumorphic-inset text-xl" />
                   </FormControl>
@@ -120,10 +126,10 @@ export const SleepLogForm: FC<SleepLogFormProps> = ({ onSave, existingLog, flow 
             />
             <FormField
               control={form.control}
-              name="wakeupTime"
+              name="wakeup"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel className="flex items-center text-foreground/80"><Sunrise className="mr-2 h-4 w-4" />Wake-up Time (planned)</FormLabel>
+                  <FormLabel className="flex items-center text-foreground/80"><SunIcon className="mr-2 h-4 w-4" />Wake-up Time (planned)</FormLabel>
                   <FormControl>
                     <Input type="time" {...field} className="neumorphic-inset text-xl" />
                   </FormControl>
@@ -136,7 +142,7 @@ export const SleepLogForm: FC<SleepLogFormProps> = ({ onSave, existingLog, flow 
               name="bedtimeMood"
               render={({ field }) => (
                 <FormItem className="space-y-3 pt-6">
-                  <FormLabel className="flex items-center text-foreground/80"><Moon className="mr-2 h-4 w-4" />End of Day Mood</FormLabel>
+                  <FormLabel className="flex items-center text-foreground/80"><MoonIcon className="mr-2 h-4 w-4" />End of Day Mood</FormLabel>
                   <FormControl>
                     <RadioGroup
                       onValueChange={field.onChange}
@@ -173,10 +179,10 @@ export const SleepLogForm: FC<SleepLogFormProps> = ({ onSave, existingLog, flow 
           <>
             <FormField
               control={form.control}
-              name="wakeupTime"
+              name="wakeup"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel className="flex items-center text-foreground/80"><Sunrise className="mr-2 h-4 w-4" />Wake-up Time</FormLabel>
+                  <FormLabel className="flex items-center text-foreground/80"><SunIcon className="mr-2 h-4 w-4" />Wake-up Time</FormLabel>
                   <FormControl>
                     <Input type="time" {...field} className="neumorphic-inset"/>
                   </FormControl>
@@ -189,7 +195,7 @@ export const SleepLogForm: FC<SleepLogFormProps> = ({ onSave, existingLog, flow 
               name="wakeupMood"
               render={({ field }) => (
                 <FormItem className="space-y-3">
-                  <FormLabel className="flex items-center text-foreground/80"><Sunrise className="mr-2 h-4 w-4" />Wake-up Mood</FormLabel>
+                  <FormLabel className="flex items-center text-foreground/80"><SunIcon className="mr-2 h-4 w-4" />Wake-up Mood</FormLabel>
                   <FormControl>
                     <RadioGroup
                       onValueChange={field.onChange}
@@ -224,7 +230,7 @@ export const SleepLogForm: FC<SleepLogFormProps> = ({ onSave, existingLog, flow 
               name="fuzziness"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel className="flex items-center text-foreground/80"><Cloudy className="mr-2 h-4 w-4" />Mental Fuzziness</FormLabel>
+                  <FormLabel className="flex items-center text-foreground/80"><CodeIcon className="mr-2 h-4 w-4" />Mental Fuzziness</FormLabel>
                   <FormControl>
                     <RadioGroup
                       onValueChange={(value) => field.onChange(parseInt(value, 10))}
@@ -264,7 +270,7 @@ export const SleepLogForm: FC<SleepLogFormProps> = ({ onSave, existingLog, flow 
                   </div>
                   <FormControl>
                     <Switch
-                      checked={field.value}
+                      checked={field.value ?? false}
                       onCheckedChange={field.onChange}
                     />
                   </FormControl>
@@ -274,23 +280,40 @@ export const SleepLogForm: FC<SleepLogFormProps> = ({ onSave, existingLog, flow 
           </>
         )}
         
-        {/* This field is now outside the conditional blocks and will show for both flows */}
-        <FormField
-          control={form.control}
-          name="additionalInfo"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel className="flex items-center text-foreground/80"><Info className="mr-2 h-4 w-4" />Notes</FormLabel>
-              <FormControl>
-                <Textarea placeholder="Any other notes about your sleep..." {...field} className="neumorphic-inset"/>
-              </FormControl>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
+        {flow === 'morning' && (
+          <FormField
+            control={form.control}
+            name="morningNotes"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel className="flex items-center text-foreground/80"><InfoCircledIcon className="mr-2 h-4 w-4" />Morning Notes</FormLabel>
+                <FormControl>
+                  <Textarea placeholder="Notes from the morning" {...field} className="neumorphic-inset"/>
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+        )}
+
+        {flow === 'evening' && (
+          <FormField
+            control={form.control}
+            name="eveningNotes"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel className="flex items-center text-foreground/80"><InfoCircledIcon className="mr-2 h-4 w-4" />Evening Notes</FormLabel>
+                <FormControl>
+                  <Textarea placeholder="Notes from the evening" {...field} className="neumorphic-inset"/>
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+        )}
 
         <Button type="submit" className="w-full neumorphic-convex active:neumorphic-concave">
-          <Save className="mr-2 h-4 w-4" /> Save Log
+          <DownloadIcon className="mr-2 h-4 w-4" /> Save Log
         </Button>
       </form>
     </Form>
