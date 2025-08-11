@@ -13,7 +13,7 @@ const inter = Inter({
 export const metadata: Metadata = {
   title: 'SleepWell',
   description: "Log and analyze your sleep patterns for a better night's rest.",
-  manifest: '/manifest.webmanifest', // Corrected path assuming it's in the public folder
+  manifest: 'manifest.webmanifest',
 };
 
 export const viewport: Viewport = {
