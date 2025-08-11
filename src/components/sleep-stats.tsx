@@ -30,7 +30,7 @@ function buildNightRecords(logs: SleepLog[]) {
     nightStart: string; // date string for bedtime (day N)
     nightEnd: string;   // date string for wakeup (day N+1)
     bedtime: string;
-    wakeupTime: string;
+    wakeup: string;
     sleepDuration: string;
     bedtimeMood: number;
     bedtimeNotes: string;
@@ -58,7 +58,7 @@ function buildNightRecords(logs: SleepLog[]) {
         nightStart: evening.date,
         nightEnd: morning.date,
         bedtime: evening.bedtime,
-        wakeupTime: morning.wakeup,
+        wakeup: morning.wakeup,
         sleepDuration,
         bedtimeMood: evening.bedtimeMood,
         bedtimeNotes: evening.additionalInfo || '',
@@ -220,7 +220,7 @@ export const SleepStats: FC<SleepStatsProps> = ({ logs, onDelete }) => {
                   <tr key={idx} className="border-b hover:bg-muted/30 cursor-pointer" onClick={() => { setSelectedNightIdx(idx); setIsDialogOpen(true); }}>
                     <td className="px-2 py-1 font-semibold">{night.nightStart} → {night.nightEnd}</td>
                     <td className="px-2 py-1">{night.bedtime}</td>
-                    <td className="px-2 py-1">{night.wakeupTime}</td>
+                    <td className="px-2 py-1">{night.wakeup}</td>
                     <td className="px-2 py-1">{night.sleepDuration}</td>
                     <td className="px-2 py-1">{night.bedtimeMood}/5</td>
                     <td className="px-2 py-1">{night.wakeupMood}/5</td>
@@ -250,7 +250,7 @@ export const SleepStats: FC<SleepStatsProps> = ({ logs, onDelete }) => {
               <div className="space-y-2">
                 <div><b>Night:</b> {nights[selectedNightIdx].nightStart} → {nights[selectedNightIdx].nightEnd}</div>
                 <div><b>Bedtime:</b> {nights[selectedNightIdx].bedtime}</div>
-                <div><b>Wake-up:</b> {nights[selectedNightIdx].wakeupTime}</div>
+                <div><b>Wake-up:</b> {nights[selectedNightIdx].wakeup}</div>
                 <div><b>Duration:</b> {nights[selectedNightIdx].sleepDuration}</div>
                 <div><b>Evening Mood:</b> {nights[selectedNightIdx].bedtimeMood}/5</div>
                 <div><b>Morning Mood:</b> {nights[selectedNightIdx].wakeupMood}/5</div>

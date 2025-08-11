@@ -1,6 +1,6 @@
 'use client';
 
-import type { FC } from 'react';
+import React, { type FC } from 'react';
 import { Card, CardHeader, CardTitle, CardContent, CardFooter } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
@@ -34,13 +34,13 @@ const MoodIndicator: FC<{ value: number }> = ({ value }) => {
 };
 
 export const SleepLogList: FC<SleepLogListProps> = ({ logs: rawLogs, onDelete, onEdit, defaultOpenId = null }) => {
-  // Normalize logs to handle legacy `wakeupTime` property from older data structures.
+  // Normalize logs to handle legacy `wakeup` property from older data structures.
   const logs = rawLogs.map(log => {
-    const logWithLegacyProp = log as SleepLog & { wakeupTime?: string };
-    if (logWithLegacyProp.wakeupTime && !logWithLegacyProp.wakeup) {
+    const logWithLegacyProp = log as SleepLog & { wakeup?: string };
+    if (logWithLegacyProp.wakeup && !logWithLegacyProp.wakeup) {
       // eslint-disable-next-line @typescript-eslint/no-unused-vars
-      const { wakeupTime, ...rest } = logWithLegacyProp;
-      return { ...rest, wakeup: wakeupTime } as SleepLog;
+      const { wakeup, ...rest } = logWithLegacyProp;
+      return { ...rest, wakeup: wakeup } as SleepLog;
     }
     return log;
   });
@@ -49,7 +49,7 @@ export const SleepLogList: FC<SleepLogListProps> = ({ logs: rawLogs, onDelete, o
     return (
       <div>
         <CardHeader className="px-0">
-          <CardTitle className="text-center text-2xl font-semibold">Sleep History</CardTitle>
+          <CardTitle as='h2' className="text-center text-2xl font-semibold">Sleep History</CardTitle>
         </CardHeader>
         <CardContent className="px-0">
           <div className="text-center text-muted-foreground py-8">
@@ -89,7 +89,7 @@ export const SleepLogList: FC<SleepLogListProps> = ({ logs: rawLogs, onDelete, o
   return (
     <div>
       <CardHeader className="px-4">
-        <CardTitle className="text-center text-2xl font-semibold">Sleep History</CardTitle>
+        <CardTitle as="h2" className="text-center text-2xl font-semibold">Sleep History</CardTitle>
       </CardHeader>
       <CardContent className="space-y-2 px-0">
         <Accordion type="multiple" className="w-full" defaultValue={defaultValues}>
@@ -121,8 +121,10 @@ export const SleepLogList: FC<SleepLogListProps> = ({ logs: rawLogs, onDelete, o
             const sleepDurationForCompleted = previousLog ? calculateDuration(previousLog.bedtime, log.wakeup) : log.sleepDuration;
 
             // For "in progress" logs, calculate proposed duration using its own bedtime and wakeup (planned times)
-            const proposedSleepDuration = (log.bedtime && log.wakeup) ? calculateDuration(log.bedtime, log.wakeup) : '';
 
+            const proposedSleepDuration = (log.bedtime && log.wakeup) ? calculateDuration(log.bedtime, log.wakeup) : '';
+            console.log(log)
+            console.log(proposedSleepDuration)
             const isEditing = editingId === log.id;
 
             return (

@@ -25,7 +25,7 @@ interface SleepLogFormProps {
 const formSchema = z.object({
   id: z.string().optional(),
   bedtime: z.string().optional(),
-  wakeupTime: z.string().optional(),
+  wakeup: z.string().optional(),
   bedtimeMood: z.string().optional(),
   additionalInfo: z.string().optional(),
   wakeupMood: z.string().optional(),
@@ -45,7 +45,7 @@ export const SleepLogForm: FC<SleepLogFormProps> = ({ onSave, existingLog, flow 
       bedtime: '',
       bedtimeMood: '3',
       additionalInfo: '',
-      wakeupTime: '06:30',
+      wakeup: '06:30',
       wakeupMood: '3',
       fuzziness: 3,
       wokeUpDuringDream: false,
@@ -57,7 +57,7 @@ export const SleepLogForm: FC<SleepLogFormProps> = ({ onSave, existingLog, flow 
       form.reset({
         id: existingLog.id,
         bedtime: existingLog.bedtime,
-        wakeupTime: existingLog.wakeup || '06:30',
+        wakeup: existingLog.wakeup || '06:30',
         bedtimeMood: String(existingLog.bedtimeMood),
         additionalInfo: existingLog.additionalInfo,
         wakeupMood: String(existingLog.wakeupMood || 3),
@@ -72,7 +72,7 @@ export const SleepLogForm: FC<SleepLogFormProps> = ({ onSave, existingLog, flow 
       form.reset({
         id: undefined,
         bedtime: `${hours}:${minutes}`,
-        wakeupTime: '06:30',
+        wakeup: '06:30',
         bedtimeMood: '3',
         additionalInfo: '',
         wakeupMood: '3',
@@ -120,7 +120,7 @@ export const SleepLogForm: FC<SleepLogFormProps> = ({ onSave, existingLog, flow 
             />
             <FormField
               control={form.control}
-              name="wakeupTime"
+              name="wakeup"
               render={({ field }) => (
                 <FormItem>
                   <FormLabel className="flex items-center text-foreground/80"><SunIcon className="mr-2 h-4 w-4" />Wake-up Time (planned)</FormLabel>
@@ -173,7 +173,7 @@ export const SleepLogForm: FC<SleepLogFormProps> = ({ onSave, existingLog, flow 
           <>
             <FormField
               control={form.control}
-              name="wakeupTime"
+              name="wakeup"
               render={({ field }) => (
                 <FormItem>
                   <FormLabel className="flex items-center text-foreground/80"><SunIcon className="mr-2 h-4 w-4" />Wake-up Time</FormLabel>

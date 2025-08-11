@@ -1,0 +1,23 @@
+{
+  "version": "1.54.2",
+  "viteVersion": "6.3.5",
+  "registerSourceHash": "ea233d95b980072c81eb49458aee55f5d33fdb02",
+  "components": [
+    {
+      "id": "_home_code_code_sleepwell_src_components_sleep_log_form_SleepLogForm",
+      "filename": "/home/code/code/sleepwell/src/components/__tests__/sleep-log-list.test.tsx",
+      "importSource": "../sleep-log-form",
+      "remoteName": "SleepLogForm"
+    }
+  ],
+  "sources": {
+    "/home/code/code/sleepwell/playwright/index.html": {
+      "timestamp": 1754876363706.1782
+    }
+  },
+  "deps": {
+    "/home/code/code/sleepwell/src/components/sleep-log-form.tsx": [
+      "/home/code/code/sleepwell/src/components/sleep-log-form.tsx"
+    ]
+  }
+}
