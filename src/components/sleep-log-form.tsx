@@ -65,7 +65,7 @@ export const SleepLogForm: FC<SleepLogFormProps> = ({ onSave, existingLog, flow 
         eveningNotes: existingLog.eveningNotes,
         wakeupMood: String(existingLog.wakeupMood || 3),
         fuzziness: existingLog.fuzziness || 3,
-        wokeUpDuringDream: existingLog.wokeUpDuringDream,
+        wokeUpDuringDream: existingLog.wokeUpDuringDream ?? false,
       });
     } else if (flow === 'evening') {
       const now = new Date();

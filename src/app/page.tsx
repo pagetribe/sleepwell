@@ -21,7 +21,7 @@ const Home: FC = () => {
 
   useEffect(() => {
     const today = new Date();
-    const currentHour = today.getHours();
+    const currentHour = today.getUTCHours();
 
     const relevantLogForMorning = sleepLogs.find(log => !log.wakeupMood || log.wakeupMood === 0);
 
