@@ -1,15 +1,14 @@
-// Ensure isProd is defined before withPWA if it's not already
-const isProd = process.env.NODE_ENV === 'production';
-
 const withPWA = require('@ducanh2912/next-pwa').default({
   dest: 'public',
   register: true,
   skipWaiting: true,
   // Disable PWA in development mode to avoid caching issues.
   disable: process.env.NODE_ENV === 'development',
-  // ADD THIS LINE:
-  basePath: isProd ? '/sleepwell' : '', // This tells next-pwa about your deployment subpath
 });
+
+// Check if we are building for GitHub Pages.
+// We'll set this to true only during the production build for GitHub.
+const isProd = process.env.NODE_ENV === 'production';
 
 /** @type {import('next').NextConfig} */
 const nextConfig = {
