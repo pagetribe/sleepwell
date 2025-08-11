@@ -126,7 +126,7 @@ test.describe('SleepLogForm functionality', () => {
     // Fill in additional notes.
     const eveningNotes = 'Finished a great book tonight.';
     await page.fill('textarea[name="eveningNotes"]', eveningNotes);
-
+// await page.pause(); // Pause here to inspect the mocked date in the browser console if needed
     // Click the "Save Log" button to submit the form.
     await page.click('button:has-text("Save Log")');
 
@@ -251,7 +251,7 @@ test.describe('SleepLogForm functionality', () => {
     // Click the "Save Log" button to submit the form.
     await page.click('button:has-text("Save Log")');
     
-    await page.pause(); // Pause here to inspect the mocked date in the browser console if needed
+    // await page.pause(); // Pause here to inspect the mocked date in the browser console if needed
     // Wait for the page to settle after the save action.
     await page.waitForLoadState('networkidle');
     await page.waitForTimeout(200);
@@ -263,6 +263,7 @@ test.describe('SleepLogForm functionality', () => {
 
     storedLogs = JSON.parse(storedLogsString || '[]');
     console.log("Parsed storedLogs array:", storedLogs);
+    await page.pause();
 
     // Find the log that was previously "In Progress" for 'expectedDate'.
     // This log should now be completed.
@@ -292,7 +293,6 @@ test.describe('SleepLogForm functionality', () => {
     console.log("Morning log successfully completed and verified for previous day.");
 
     // You can uncomment this to keep the browser open at the end of the test for manual inspection.
-    // await page.pause();
 });
 
 

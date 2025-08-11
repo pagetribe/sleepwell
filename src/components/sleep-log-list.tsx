@@ -1,13 +1,13 @@
 'use client';
 
-import React, { type FC } from 'react';
+import React, { type FC, useState, useEffect } from 'react';
 import { Card, CardHeader, CardTitle, CardContent, CardFooter } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
 import type { SleepLog } from '@/lib/types';
 import { MOOD_OPTIONS } from '@/lib/types';
 import { calculateDuration } from '@/lib/utils';
-import { 
+import {
   ClockIcon,
   MoonIcon,
   Pencil1Icon,
@@ -15,13 +15,42 @@ import {
   InfoCircledIcon,
   BellIcon,
 } from '@radix-ui/react-icons';
-import { useState } from 'react';
 
 interface SleepLogListProps {
   logs: SleepLog[];
   onDelete: (id: string) => void;
   onEdit: (log: SleepLog) => void;
   defaultOpenId?: string | null;
+}
+
+// Define a type for the daily summary we want to display
+interface DailySleepSummary {
+  displayDate: string; // YYYY-MM-DD for the card's main date
+  // The ID of the primary log for this day.
+  // If it's a complete sleep cycle ending on this day, it's that log's ID.
+  // If it's an incomplete evening log starting on this day, it's that log's ID.
+  // This is used for accordion value and editing/deleting.
+  logId: string; // Needs to be string for Accordion value, not optional
+
+  morningDetails: {
+    wakeup?: string;
+    wakeupMood?: number;
+    fuzziness?: number;
+    wokeUpDuringDream?: boolean | null;
+    morningNotes?: string;
+    sleepDuration?: string; // Actual duration for the sleep ending on this day
+    bedtimeForThisSleep?: string; // Bedtime from the log that ended this morning
+    originalLogId: string; // ID of the original SleepLog object that provides these morning details
+  } | null;
+
+  eveningDetails: {
+    bedtime?: string;
+    bedtimeMood?: number;
+    eveningNotes?: string;
+    isInProgress?: boolean; // Is this an incomplete log that started this evening?
+    proposedDuration?: string; // Proposed duration for the log that started this evening
+    originalLogId: string; // ID of the original SleepLog object that provides these evening details
+  } | null;
 }
 
 const MoodIndicator: FC<{ value: number }> = ({ value }) => {
@@ -34,7 +63,7 @@ const MoodIndicator: FC<{ value: number }> = ({ value }) => {
 };
 
 export const SleepLogList: FC<SleepLogListProps> = ({ logs: rawLogs, onDelete, onEdit, defaultOpenId = null }) => {
-  // Normalize logs to handle legacy `wakeup` and `additionalInfo` properties from older data structures.
+  // Normalize logs (keep this part as it cleans up potential old data structures)
   const logs = rawLogs.map(log => {
     const logWithLegacyProps = log as SleepLog & { wakeup?: string; additionalInfo?: string };
     let newLog: SleepLog = { ...log };
@@ -50,6 +79,160 @@ export const SleepLogList: FC<SleepLogListProps> = ({ logs: rawLogs, onDelete, o
     }
     return newLog;
   });
+
+  const formatTime = (time: string) => {
+    if (!time) return '';
+    const [hour, minute] = time.split(':');
+    const h = parseInt(hour, 10);
+    const ampm = h >= 12 ? 'pm' : 'am';
+    const formattedHour = h % 12 || 12;
+    return `${formattedHour}:${minute} ${ampm}`;
+  };
+
+  // --- NEW LOGIC: Create DailySleepSummary objects for the display ---
+  const dailySummariesMap = new Map<string, DailySleepSummary>(); // Key: YYYY-MM-DD
+
+  logs.forEach(log => {
+    // Determine if this log is "complete" (has morning data)
+    const isCompletedSleepLog = (log.wakeupMood !== 0 && log.wakeupMood !== undefined && log.wakeupMood !== null);
+
+    if (isCompletedSleepLog) {
+      // This log represents a sleep cycle ending on log.date (wake-up date)
+      const wakeUpDate = new Date(log.date);
+      const wakeUpDateISO = wakeUpDate.toISOString().slice(0, 10);
+
+      // 1. Add/Update morning details for the wake-up date
+      if (!dailySummariesMap.has(wakeUpDateISO)) {
+        // Provide a temporary logId, will be updated if an evening log exists for this day.
+        // Or if only morning data, this logId will be primary.
+        dailySummariesMap.set(wakeUpDateISO, {
+          displayDate: wakeUpDateISO,
+          logId: log.id, // Primary ID for this card will be the complete log's ID
+          morningDetails: null,
+          eveningDetails: null,
+        });
+      }
+      const currentDaySummary = dailySummariesMap.get(wakeUpDateISO)!;
+      currentDaySummary.morningDetails = {
+        wakeup: log.wakeup,
+        wakeupMood: log.wakeupMood,
+        fuzziness: log.fuzziness,
+        wokeUpDuringDream: log.wokeUpDuringDream,
+        morningNotes: log.morningNotes,
+        sleepDuration: log.sleepDuration,
+        bedtimeForThisSleep: log.bedtime,
+        originalLogId: log.id,
+      };
+      // Ensure the logId for the card is the ID of the complete log
+      currentDaySummary.logId = log.id;
+
+
+      // 2. Add/Update evening details for the *previous day* (bedtime date)
+      // Calculate the actual bedtime date
+      const bedtimeDate = new Date(wakeUpDate);
+      const [bedHours, bedMinutes] = log.bedtime.split(':').map(Number);
+      const [wakeHours, wakeMinutes] = log.wakeup.split(':').map(Number);
+
+      const fullBedtime = new Date(bedtimeDate.getFullYear(), bedtimeDate.getMonth(), bedtimeDate.getDate(), bedHours, bedMinutes);
+      const fullWakeup = new Date(bedtimeDate.getFullYear(), bedtimeDate.getMonth(), bedtimeDate.getDate(), wakeHours, wakeMinutes);
+
+      if (fullWakeup.getTime() < fullBedtime.getTime()) {
+          bedtimeDate.setDate(bedtimeDate.getDate() - 1); // If wakeup is 'earlier' (next day)
+      }
+      const bedtimeDateISO = bedtimeDate.toISOString().slice(0, 10);
+
+      if (!dailySummariesMap.has(bedtimeDateISO)) {
+        // Provide a temporary logId, will be updated if an evening log exists for this day.
+        dailySummariesMap.set(bedtimeDateISO, {
+          displayDate: bedtimeDateISO,
+          logId: log.id, // If only evening part, this log will be primary.
+          morningDetails: null,
+          eveningDetails: null,
+        });
+      }
+      const previousDaySummary = dailySummariesMap.get(bedtimeDateISO)!;
+
+      previousDaySummary.eveningDetails = {
+        bedtime: log.bedtime,
+        bedtimeMood: log.bedtimeMood,
+        eveningNotes: log.eveningNotes,
+        isInProgress: false, // This evening part is from a completed log
+        proposedDuration: undefined,
+        originalLogId: log.id,
+      };
+      // If this day had no morning details but now has an evening part from a completed log,
+      // it might become the primary logId for this day's card
+      if (!previousDaySummary.morningDetails) {
+          previousDaySummary.logId = log.id;
+      }
+
+
+    } else {
+      // This log is "in-progress" (just an evening entry with default wakeupMood/fuzziness)
+      // Its date (log.date) IS the bedtime date
+      const bedtimeDate = new Date(log.date);
+      const bedtimeDateISO = bedtimeDate.toISOString().slice(0, 10);
+
+      // Add/Update evening details for this date
+      if (!dailySummariesMap.has(bedtimeDateISO)) {
+        dailySummariesMap.set(bedtimeDateISO, {
+          displayDate: bedtimeDateISO,
+          logId: log.id, // This log is the primary for this day as it's the current "in-progress" one
+          morningDetails: null,
+          eveningDetails: null,
+        });
+      }
+      const currentDaySummaryForEvening = dailySummariesMap.get(bedtimeDateISO)!;
+
+      currentDaySummaryForEvening.eveningDetails = {
+        bedtime: log.bedtime,
+        bedtimeMood: log.bedtimeMood,
+        eveningNotes: log.eveningNotes,
+        isInProgress: true,
+        proposedDuration: (log.bedtime && log.wakeup) ? calculateDuration(log.bedtime, log.wakeup) : undefined,
+        originalLogId: log.id,
+      };
+      // For an in-progress log, this log is definitely the one to use for the AccordionItem's ID
+      currentDaySummaryForEvening.logId = log.id;
+    }
+  });
+
+
+  // Filter out any summaries that ended up with no morning OR evening details (shouldn't happen with current logic but as a safeguard)
+  const filteredDailySummaries = Array.from(dailySummariesMap.values()).filter(summary =>
+    summary.morningDetails || summary.eveningDetails
+  );
+
+  // Sort daily summaries by displayDate from newest to oldest
+  const sortedDailySummaries = filteredDailySummaries.sort((a, b) =>
+    new Date(b.displayDate).getTime() - new Date(a.displayDate).getTime()
+  );
+
+  // Handle Accordion default open state
+  const initialOpenItems = defaultOpenId ? [defaultOpenId] : (sortedDailySummaries.length > 0 ? [sortedDailySummaries[0].logId] : []);
+  const [openAccordionItems, setOpenAccordionItems] = useState<string[]>(initialOpenItems);
+
+  // Ensure defaultOpenId is opened if it changes or wasn't initially present
+  useEffect(() => {
+    if (defaultOpenId && !openAccordionItems.includes(defaultOpenId)) {
+      setOpenAccordionItems(prev => [...prev, defaultOpenId]);
+    }
+  }, [defaultOpenId, openAccordionItems]);
+
+
+  const [editingId, setEditingId] = useState<string | null>(null);
+  const [editData, setEditData] = useState<Partial<Record<keyof SleepLog, any>>>({});
+
+  // Helper to safely get edit value, falling back to original if edit is empty
+  function getEditValue<T>(editValue: T | undefined, originalValue: T | undefined): T | undefined {
+    if (editValue === undefined || editValue === null || editValue === '') {
+      if (originalValue === undefined || originalValue === null || originalValue === '') {
+        return undefined;
+      }
+      return originalValue;
+    }
+    return editValue;
+  }
 
   if (logs.length === 0) {
     return (
@@ -67,108 +250,68 @@ export const SleepLogList: FC<SleepLogListProps> = ({ logs: rawLogs, onDelete, o
     );
   }
 
-  const formatTime = (time: string) => {
-    if (!time) return '';
-    const [hour, minute] = time.split(':');
-    const h = parseInt(hour, 10);
-    const ampm = h >= 12 ? 'pm' : 'am';
-    const formattedHour = h % 12 || 12;
-    return `${formattedHour}:${minute} ${ampm}`;
-  };
-
-  const sortedLogs = [...logs].sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
-
-  const defaultValues = defaultOpenId ? [defaultOpenId] : (sortedLogs.length > 0 ? [sortedLogs[0].id] : []);
-  const [editingId, setEditingId] = useState<string | null>(null);
-  const [editData, setEditData] = useState<Partial<Record<keyof SleepLog, any>>>({});
-
-  function getEditValue<T>(editValue: T | undefined, originalValue: T | undefined): T | undefined {
-    if (editValue === undefined || editValue === null || editValue === '') {
-      if (originalValue === undefined || originalValue === null || originalValue === '') {
-        return undefined;
-      }
-      return originalValue;
-    }
-    return editValue;
-  }
-
   return (
     <div>
       <CardHeader className="px-4">
         <CardTitle as="h2" className="text-center text-2xl font-semibold">Sleep History</CardTitle>
       </CardHeader>
       <CardContent className="space-y-2 px-0">
-        <Accordion type="multiple" className="w-full" defaultValue={defaultValues}>
-          {sortedLogs.map((log, index) => {
-            const wakeUpDate = new Date(`${log.date}T00:00:00`);
+        <Accordion type="multiple" className="w-full" value={openAccordionItems} onValueChange={setOpenAccordionItems}>
+          {sortedDailySummaries.map((dailySummary) => {
+            // Convert ISO date string to readable date for the card title
+            const displayDateObj = new Date(dailySummary.displayDate);
             const titleDateOptions: Intl.DateTimeFormatOptions = {
               weekday: 'long',
               month: 'long',
               day: 'numeric',
             };
-            const title = wakeUpDate.toLocaleDateString('en-US', titleDateOptions);
+            const title = displayDateObj.toLocaleDateString('en-US', titleDateOptions);
 
-            const previousLog = index < sortedLogs.length - 1 ? sortedLogs[index + 1] : null;
+            const sectionDateOptions: Intl.DateTimeFormatOptions = {
+              month: 'long',
+              day: 'numeric',
+            };
+            const morningSectionDateString = displayDateObj.toLocaleDateString('en-US', sectionDateOptions);
+            const eveningSectionDateString = displayDateObj.toLocaleDateString('en-US', sectionDateOptions); // Evening is on the same displayDate
 
-            const today = new Date();
-            const todayDateString = today.toISOString().slice(0, 10); // e.g., "2025-08-10"
+            // Determine which original log to use for editing/deleting based on the primary logId for this summary
+            // This is crucial because a dailySummary might combine parts of two different actual SleepLog objects
+            const originalLogForActions = logs.find(l => l.id === dailySummary.logId);
 
-            const isLogForToday = log.date === todayDateString;
+            if (!originalLogForActions) return null; // Should not happen if dailySummary.logId is correctly set
 
-            const hasMorningDetailsRecorded = (log.wakeupMood !== 0 && log.wakeupMood !== undefined && log.wakeupMood !== null) ||
-                                             (log.fuzziness !== 0 && log.fuzziness !== undefined && log.fuzziness !== null) ||
-                                             (log.morningNotes && log.morningNotes.trim() !== '');
-
-            // A log is "in progress" if it's for today AND morning details are NOT yet recorded
-            const isInProgress = isLogForToday && !hasMorningDetailsRecorded;
-
-            // sleepDuration is calculated for display for *completed* logs using the previous night's bedtime
-            const sleepDurationForCompleted = previousLog ? calculateDuration(previousLog.bedtime, log.wakeup) : log.sleepDuration;
-
-            // For "in progress" logs, calculate proposed duration using its own bedtime and wakeup (planned times)
-
-            const proposedSleepDuration = (log.bedtime && log.wakeup) ? calculateDuration(log.bedtime, log.wakeup) : '';
-            console.log(log)
-            console.log(proposedSleepDuration)
-            const isEditing = editingId === log.id;
+            const isEditing = editingId === originalLogForActions.id;
 
             return (
-              <AccordionItem value={log.id} key={log.id} className="border-b-0 neumorphic-flat mb-3 !rounded-lg overflow-hidden">
+              // Use the logId of the primary log for this summary as the AccordionItem value
+              <AccordionItem value={originalLogForActions.id} key={originalLogForActions.id} className="border-b-0 neumorphic-flat mb-3 !rounded-lg overflow-hidden">
                 <AccordionTrigger className="hover:no-underline p-4">
                   <div className="flex justify-between items-center w-full">
                     <div className="flex flex-col text-left">
-                      <span className="text-sm text-muted-foreground mb-3">{title}</span>
+                      <span className="text-sm text-muted-foreground mb-3">{title}</span> {/* Main date of the card */}
                       <div className="flex items-start gap-2 text-base text-muted-foreground">
                         <ClockIcon className="h-4 w-4 mt-1 shrink-0" />
                         <div className="flex flex-col items-start">
-                          {isInProgress ? (
-                            // Exactly matching the new image: "In Progress" followed by "proposed duration: X"
+                          {dailySummary.eveningDetails?.isInProgress && !dailySummary.morningDetails ? (
+                            // Only Evening data for this day (it's an in-progress log starting on this day)
                             <>
                               <span className="font-bold text-foreground">In Progress</span>
-                              {proposedSleepDuration && ( // Only show if proposed duration is calculated
+                              {dailySummary.eveningDetails.proposedDuration && (
                                 <span className="text-xs text-muted-foreground">
-                                  proposed duration: {proposedSleepDuration}
+                                  proposed duration: {dailySummary.eveningDetails.proposedDuration}
                                 </span>
                               )}
                             </>
                           ) : (
-                            // Display actual sleep duration and times for completed logs
+                            // Completed sleep or a day with morning data but no current evening data
                             <>
                               <span className="font-bold text-foreground">
-                                {sleepDurationForCompleted} {/* Use the calculated duration for completed logs */}
+                                {dailySummary.morningDetails?.sleepDuration || 'N/A'} {/* Use actual duration from morning details */}
                               </span>
-                              {/* Display bed/woke times for completed logs: */}
-                              {/* If there's a previous log (meaning this log represents a full night's sleep) */}
-                              {previousLog && (
+                              {dailySummary.morningDetails?.bedtimeForThisSleep && dailySummary.morningDetails?.wakeup && (
                                 <span className="text-xs text-muted-foreground">
-                                  bed: {formatTime(previousLog.bedtime)}, woke at {formatTime(log.wakeup)}
+                                  bed: {formatTime(dailySummary.morningDetails.bedtimeForThisSleep)}, woke at {formatTime(dailySummary.morningDetails.wakeup)}
                                 </span>
-                              )}
-                              {/* If it's the very first (oldest) completed log, display its own bedtime/wakeup */}
-                              {!previousLog && log.bedtime && log.wakeup && (
-                                  <span className="text-xs text-muted-foreground">
-                                    bed: {formatTime(log.bedtime)}, woke at {formatTime(log.wakeup)}
-                                  </span>
                               )}
                             </>
                           )}
@@ -176,8 +319,7 @@ export const SleepLogList: FC<SleepLogListProps> = ({ logs: rawLogs, onDelete, o
                       </div>
                     </div>
                     <div className="flex items-center gap-2">
-                      {/* MoodIndicator for Wake-up mood, will show '-' if value is 0, null, or undefined */}
-                      <MoodIndicator value={log.wakeupMood} />
+                      <MoodIndicator value={dailySummary.morningDetails?.wakeupMood ?? 0} /> {/* Display morning mood for the card */}
                     </div>
                   </div>
                 </AccordionTrigger>
@@ -188,46 +330,48 @@ export const SleepLogList: FC<SleepLogListProps> = ({ logs: rawLogs, onDelete, o
                         className="space-y-4"
                         onSubmit={e => {
                           e.preventDefault();
+                          // When editing, we're editing the original log that generated this daily summary's primary ID
                           onEdit({
-                            ...log,
-                            bedtime: getEditValue(editData.bedtime, log.bedtime) ?? '',
-                            wakeup: getEditValue(editData.wakeup, log.wakeup) ?? '',
+                            ...originalLogForActions, // Use the original log found earlier
+                            bedtime: getEditValue(editData.bedtime, originalLogForActions.bedtime) ?? '',
+                            wakeup: getEditValue(editData.wakeup, originalLogForActions.wakeup) ?? '',
                             bedtimeMood: getEditValue(
                               editData.bedtimeMood !== undefined && editData.bedtimeMood !== ''
                                 ? Number(editData.bedtimeMood)
                                 : undefined,
-                              log.bedtimeMood
+                              originalLogForActions.bedtimeMood
                             ) ?? 0,
                             wakeupMood: getEditValue(
                               editData.wakeupMood !== undefined && editData.wakeupMood !== ''
                                 ? Number(editData.wakeupMood)
                                 : undefined,
-                              log.wakeupMood
+                              originalLogForActions.wakeupMood
                             ) ?? 0,
                             fuzziness: getEditValue(
                               editData.fuzziness !== undefined && editData.fuzziness !== ''
                                 ? Number(editData.fuzziness)
                                 : undefined,
-                              log.fuzziness
+                              originalLogForActions.fuzziness
                             ) ?? 0,
                             wokeUpDuringDream: getEditValue(
                               editData.wokeUpDuringDream !== undefined
                                 ? (editData.wokeUpDuringDream === 'true' || editData.wokeUpDuringDream === true)
                                 : undefined,
-                              log.wokeUpDuringDream
+                              originalLogForActions.wokeUpDuringDream
                             ) ?? false,
-                            morningNotes: getEditValue(editData.morningNotes, log.morningNotes),
-                            eveningNotes: getEditValue(editData.eveningNotes, log.eveningNotes),
+                            morningNotes: getEditValue(editData.morningNotes, originalLogForActions.morningNotes),
+                            eveningNotes: getEditValue(editData.eveningNotes, originalLogForActions.eveningNotes),
                           });
                           setEditingId(null);
                           setEditData({});
                         }}
                       >
+                        {/* Edit form fields - populate with originalLogForActions data */}
                         <div>
                           <label className="block text-sm mb-1">Bedtime</label>
                           <input
                             type="time"
-                            value={editData.bedtime ?? log.bedtime ?? ''}
+                            value={getEditValue(editData.bedtime, originalLogForActions.bedtime) ?? ''}
                             onChange={e => setEditData(d => ({ ...d, bedtime: e.target.value }))}
                             className="input input-bordered w-full"
                           />
@@ -236,7 +380,7 @@ export const SleepLogList: FC<SleepLogListProps> = ({ logs: rawLogs, onDelete, o
                           <label className="block text-sm mb-1">Wake-up Time</label>
                           <input
                             type="time"
-                            value={editData.wakeup ?? log.wakeup ?? ''}
+                            value={getEditValue(editData.wakeup, originalLogForActions.wakeup) ?? ''}
                             onChange={e => setEditData(d => ({ ...d, wakeup: e.target.value }))}
                             className="input input-bordered w-full"
                           />
@@ -247,7 +391,7 @@ export const SleepLogList: FC<SleepLogListProps> = ({ logs: rawLogs, onDelete, o
                             type="number"
                             min={0}
                             max={5}
-                            value={editData.bedtimeMood ?? log.bedtimeMood ?? ''}
+                            value={getEditValue(editData.bedtimeMood, originalLogForActions.bedtimeMood) ?? ''}
                             onChange={e => setEditData(d => ({ ...d, bedtimeMood: e.target.value }))}
                             className="input input-bordered w-full"
                           />
@@ -258,7 +402,7 @@ export const SleepLogList: FC<SleepLogListProps> = ({ logs: rawLogs, onDelete, o
                             type="number"
                             min={0}
                             max={5}
-                            value={editData.wakeupMood ?? log.wakeupMood ?? ''}
+                            value={getEditValue(editData.wakeupMood, originalLogForActions.wakeupMood) ?? ''}
                             onChange={e => setEditData(d => ({ ...d, wakeupMood: e.target.value }))}
                             className="input input-bordered w-full"
                           />
@@ -269,7 +413,7 @@ export const SleepLogList: FC<SleepLogListProps> = ({ logs: rawLogs, onDelete, o
                             type="number"
                             min={0}
                             max={5}
-                            value={editData.fuzziness ?? log.fuzziness ?? ''}
+                            value={getEditValue(editData.fuzziness, originalLogForActions.fuzziness) ?? ''}
                             onChange={e => setEditData(d => ({ ...d, fuzziness: e.target.value }))}
                             className="input input-bordered w-full"
                           />
@@ -277,7 +421,7 @@ export const SleepLogList: FC<SleepLogListProps> = ({ logs: rawLogs, onDelete, o
                         <div>
                           <label className="block text-sm mb-1">Woke Up During Dream</label>
                           <select
-                            value={String(editData.wokeUpDuringDream ?? log.wokeUpDuringDream ?? 'false')}
+                            value={String(getEditValue(editData.wokeUpDuringDream, originalLogForActions.wokeUpDuringDream) ?? 'false')}
                             onChange={e => setEditData(d => ({ ...d, wokeUpDuringDream: e.target.value === 'true' }))}
                             className="input input-bordered w-full"
                           >
@@ -288,7 +432,7 @@ export const SleepLogList: FC<SleepLogListProps> = ({ logs: rawLogs, onDelete, o
                         <div>
                           <label className="block text-sm mb-1">Morning Notes</label>
                           <textarea
-                            value={editData.morningNotes ?? log.morningNotes ?? ''}
+                            value={getEditValue(editData.morningNotes, originalLogForActions.morningNotes) ?? ''}
                             onChange={e => setEditData(d => ({ ...d, morningNotes: e.target.value }))}
                             className="input input-bordered w-full"
                             placeholder="Notes from the morning"
@@ -297,7 +441,7 @@ export const SleepLogList: FC<SleepLogListProps> = ({ logs: rawLogs, onDelete, o
                         <div>
                           <label className="block text-sm mb-1">Evening Notes</label>
                           <textarea
-                            value={editData.eveningNotes ?? log.eveningNotes ?? ''}
+                            value={getEditValue(editData.eveningNotes, originalLogForActions.eveningNotes) ?? ''}
                             onChange={e => setEditData(d => ({ ...d, eveningNotes: e.target.value }))}
                             className="input input-bordered w-full"
                             placeholder="Notes from the evening"
@@ -313,33 +457,39 @@ export const SleepLogList: FC<SleepLogListProps> = ({ logs: rawLogs, onDelete, o
                         <div className="space-y-3">
                           <h4 className="font-semibold text-muted-foreground flex items-center gap-2">
                             <BellIcon className="h-4 w-4" />
-                            <span>Morning</span>
+                            <span>Morning ({morningSectionDateString})</span>
                           </h4>
                           <div className="pl-6 space-y-2 text-base border-l-2 border-primary/20">
                             <div className="flex items-center gap-2">
                               <span className="text-muted-foreground w-24">Woke:</span>
-                              <span className="font-semibold">{formatTime(log.wakeup)}</span>
+                              <span className="font-semibold">
+                                {dailySummary.morningDetails?.wakeup ? formatTime(dailySummary.morningDetails.wakeup) : <span className="text-foreground/60">-</span>}
+                              </span>
                             </div>
                             <div className="flex items-center gap-2">
                               <span className="text-muted-foreground w-24">Wake-up mood:</span>
-                              <span className="font-semibold">{log.wakeupMood > 0 ? `${log.wakeupMood}/5` : '-'}</span>
+                              <span className="font-semibold">
+                                {dailySummary.morningDetails?.wakeupMood && dailySummary.morningDetails.wakeupMood > 0 ? `${dailySummary.morningDetails.wakeupMood}/5` : '-'}
+                              </span>
                             </div>
                             <div className="flex items-center gap-2">
                               <span className="text-muted-foreground w-24">Fuzziness:</span>
-                              <span className="font-semibold">{log.fuzziness > 0 ? `${log.fuzziness}/5` : '-'}</span>
+                              <span className="font-semibold">
+                                {dailySummary.morningDetails?.fuzziness && dailySummary.morningDetails.fuzziness > 0 ? `${dailySummary.morningDetails.fuzziness}/5` : '-'}
+                              </span>
                             </div>
                             <div className="flex items-center gap-2">
                               <span className="text-muted-foreground w-24">Mid-dream:</span>
                               <span className="font-semibold">
-                                {typeof log.wokeUpDuringDream === 'boolean'
-                                  ? (log.wokeUpDuringDream ? 'Yes' : 'No')
+                                {typeof dailySummary.morningDetails?.wokeUpDuringDream === 'boolean'
+                                  ? (dailySummary.morningDetails.wokeUpDuringDream ? 'Yes' : 'No')
                                   : <span className="text-foreground/60">-</span>}
                               </span>
                             </div>
                             <div className="flex items-start gap-2">
                               <span className="text-muted-foreground w-24 mt-1">Morning notes:</span>
                               <span className="font-semibold flex-1">
-                                {log.morningNotes && log.morningNotes.trim() ? log.morningNotes : <span className="italic text-muted-foreground/60">No notes</span>}
+                                {dailySummary.morningDetails?.morningNotes && dailySummary.morningDetails.morningNotes.trim() ? dailySummary.morningDetails.morningNotes : <span className="italic text-muted-foreground/60">No notes</span>}
                               </span>
                             </div>
                           </div>
@@ -347,21 +497,25 @@ export const SleepLogList: FC<SleepLogListProps> = ({ logs: rawLogs, onDelete, o
                         <div className="space-y-3">
                           <h4 className="font-semibold text-muted-foreground flex items-center gap-2">
                             <MoonIcon className="h-4 w-4" />
-                            <span>Evening</span>
+                            <span>Evening ({eveningSectionDateString})</span>
                           </h4>
                           <div className="pl-6 space-y-2 text-base border-l-2 border-primary/20">
                             <div className="flex items-center gap-2">
                               <span className="text-muted-foreground w-24">Bed:</span>
-                              <span className="font-semibold">{formatTime(log.bedtime)}</span>
+                              <span className="font-semibold">
+                                {dailySummary.eveningDetails?.bedtime ? formatTime(dailySummary.eveningDetails.bedtime) : <span className="text-foreground/60">-</span>}
+                              </span>
                             </div>
                             <div className="flex items-center gap-2">
                               <span className="text-muted-foreground w-24">Daytime mood:</span>
-                              <span className="font-semibold">{log.bedtimeMood > 0 ? `${log.bedtimeMood}/5` : '-'}</span>
+                              <span className="font-semibold">
+                                {dailySummary.eveningDetails?.bedtimeMood && dailySummary.eveningDetails.bedtimeMood > 0 ? `${dailySummary.eveningDetails.bedtimeMood}/5` : '-'}
+                              </span>
                             </div>
                             <div className="flex items-start gap-2">
                               <span className="text-muted-foreground w-24 mt-1">Evening notes:</span>
                               <span className="font-semibold flex-1">
-                                {log.eveningNotes && log.eveningNotes.trim() ? log.eveningNotes : <span className="italic text-muted-foreground/60">No notes</span>}
+                                {dailySummary.eveningDetails?.eveningNotes && dailySummary.eveningDetails.eveningNotes.trim() ? dailySummary.eveningDetails.eveningNotes : <span className="italic text-muted-foreground/60">No notes</span>}
                               </span>
                             </div>
                           </div>
@@ -371,15 +525,25 @@ export const SleepLogList: FC<SleepLogListProps> = ({ logs: rawLogs, onDelete, o
                             variant="outline"
                             size="icon"
                             onClick={() => {
-                              setEditingId(log.id);
-                              setEditData({});
+                              // When editing, pass the original log associated with this card
+                              setEditingId(originalLogForActions.id);
+                              setEditData({
+                                bedtime: originalLogForActions.bedtime,
+                                wakeup: originalLogForActions.wakeup,
+                                bedtimeMood: originalLogForActions.bedtimeMood,
+                                wakeupMood: originalLogForActions.wakeupMood,
+                                fuzziness: originalLogForActions.fuzziness,
+                                wokeUpDuringDream: originalLogForActions.wokeUpDuringDream,
+                                morningNotes: originalLogForActions.morningNotes,
+                                eveningNotes: originalLogForActions.eveningNotes,
+                              });
                             }}
                             className="h-8 w-8 neumorphic-convex active:neumorphic-concave"
                           >
                             <span className="sr-only">Edit</span>
                             <Pencil1Icon className="h-4 w-4" />
                           </Button>
-                          <Button variant="destructive" size="icon" onClick={() => onDelete(log.id)} className="h-8 w-8 neumorphic-convex active:neumorphic-concave">
+                          <Button variant="destructive" size="icon" onClick={() => onDelete(originalLogForActions.id)} className="h-8 w-8 neumorphic-convex active:neumorphic-concave">
                             <TrashIcon className="h-4 w-4" />
                             <span className="sr-only">Delete</span>
                           </Button>
