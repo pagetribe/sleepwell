@@ -57,16 +57,16 @@ const Home: FC = () => {
       );
       savedLogId = logData.id;
     } else {
-      const now = new Date();
-      const nextDay = new Date(now);
-      if (now.getHours() >= 18) {
-          nextDay.setDate(now.getDate() + 1);
-      }
-      const nextDayStr = nextDay.toLocaleDateString('en-AU');
+      const now = new Date();      
+      // Using ISO 8601 format (YYYY-MM-DD) for consistency and to avoid parsing issues.
+      const year = now.getFullYear();
+      const month = String(now.getMonth() + 1).padStart(2, '0');
+      const day = String(now.getDate()).padStart(2, '0');
+      const todayStr = `${year}-${month}-${day}`;
 
       const newLog: SleepLog = {
         id: new Date().toISOString(),
-        date: nextDayStr,
+        date: todayStr,
         bedtime: logData.bedtime || '',
         bedtimeMood: logData.bedtimeMood || 0,
         wakeup: logData.wakeup || '',
@@ -74,7 +74,7 @@ const Home: FC = () => {
         eveningNotes: logData.eveningNotes || undefined,
         wakeupMood: 0,
         fuzziness: 0,
-        wokeUpDuringDream: logData.wokeUpDuringDream,
+        wokeUpDuringDream: logData.wokeUpDuringDream ?? null,
         sleepDuration: 'In Progress',
       };
       

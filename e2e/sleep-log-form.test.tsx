@@ -53,16 +53,14 @@ test.describe('SleepLogForm functionality', () => {
     // Check if any log was saved at all. If this fails, the save action itself might be problematic.
     expect(storedLogs.length).toBeGreaterThan(0);
 
-    // 4. Calculate the expected date. For evening logs, your app saves the *next day's* date.
+    // 4. Calculate the expected date. The app should now save *today's* date for evening logs.
     const today = new Date();
-    const tomorrow = new Date(today);
-    tomorrow.setDate(today.getDate() + 1); // Add one day to get tomorrow's date
 
-    // Format tomorrow's date in DD/MM/YYYY format to match what your application saves.
-    const day = String(tomorrow.getDate()).padStart(2, '0');
-    const month = String(tomorrow.getMonth() + 1).padStart(2, '0'); // Month is 0-indexed
-    const year = tomorrow.getFullYear();
-    const expectedDate = `${day}/${month}/${year}`;
+    // Format today's date in YYYY-MM-DD format to match what the application now saves.
+    const year = today.getFullYear();
+    const month = String(today.getMonth() + 1).padStart(2, '0'); // Month is 0-indexed
+    const day = String(today.getDate()).padStart(2, '0');
+    const expectedDate = `${year}-${month}-${day}`;
 
     console.log("Expected Date for current log (matching app format):", expectedDate);
 
@@ -81,7 +79,7 @@ test.describe('SleepLogForm functionality', () => {
     // Assert that the saved log contains the expected data matching the localStorage image.
     expect(savedLog).toEqual(expect.objectContaining({
       id: expect.any(String), // The ID is dynamically generated
-      date: expectedDate,     // Now correctly matches 'DD/MM/YYYY' of the next day
+      date: expectedDate,     // Now correctly matches 'YYYY-MM-DD' of the current day
       bedtime: bedtime,
       // Based on your previous debug output, 'wakeup' is saved as '06:30' even if not explicitly filled in form
       wakeup: '06:30',
@@ -92,8 +90,7 @@ test.describe('SleepLogForm functionality', () => {
       // as they are typically filled during the morning log completion.
       wakeupMood: 0,
       fuzziness: 0,
-      // --- FIX: Remove 'wokeUpDuringDream: undefined' if it's not present at all ---
-      // wokeUpDuringDream: undefined, // Removed this line as it's not present in your saved object
+      wokeUpDuringDream: null, // Should now be explicitly null for new logs
       sleepDuration: "In Progress", // Crucial identifier for an incomplete log
     }));
 

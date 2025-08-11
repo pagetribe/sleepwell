@@ -38,3 +38,18 @@ sleep duratation: 10 hours (bed: 9:00 PM, woke at 7:00 AM)
     bed: 11:00 PM
     daytime mood: 1/5
     evening notes: "mixed day"
+
+
+
+first entry:
+sleep duratation: ? hours
+- morning:
+    woke: 6:30 AM
+    wake moode: -
+    fuzziness: -
+    mid-dream: -
+    morning notes: -
+- evening:
+    bed: 10:00 PM
+    daytime mood: 4/5
+    evening notes: "Had a productive day, feeling accomplished."

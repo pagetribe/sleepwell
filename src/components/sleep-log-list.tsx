@@ -245,7 +245,7 @@ export const SleepLogList: FC<SleepLogListProps> = ({ logs: rawLogs, onDelete, o
                           <label className="block text-sm mb-1">Daytime Mood</label>
                           <input
                             type="number"
-                            min={1}
+                            min={0}
                             max={5}
                             value={editData.bedtimeMood ?? log.bedtimeMood ?? ''}
                             onChange={e => setEditData(d => ({ ...d, bedtimeMood: e.target.value }))}
@@ -256,7 +256,7 @@ export const SleepLogList: FC<SleepLogListProps> = ({ logs: rawLogs, onDelete, o
                           <label className="block text-sm mb-1">Wake-up Mood</label>
                           <input
                             type="number"
-                            min={1}
+                            min={0}
                             max={5}
                             value={editData.wakeupMood ?? log.wakeupMood ?? ''}
                             onChange={e => setEditData(d => ({ ...d, wakeupMood: e.target.value }))}
@@ -267,7 +267,7 @@ export const SleepLogList: FC<SleepLogListProps> = ({ logs: rawLogs, onDelete, o
                           <label className="block text-sm mb-1">Fuzziness</label>
                           <input
                             type="number"
-                            min={1}
+                            min={0}
                             max={5}
                             value={editData.fuzziness ?? log.fuzziness ?? ''}
                             onChange={e => setEditData(d => ({ ...d, fuzziness: e.target.value }))}
@@ -330,7 +330,11 @@ export const SleepLogList: FC<SleepLogListProps> = ({ logs: rawLogs, onDelete, o
                             </div>
                             <div className="flex items-center gap-2">
                               <span className="text-muted-foreground w-24">Mid-dream:</span>
-                              <span className="font-semibold">{log.wokeUpDuringDream ? 'Yes' : 'No'}</span>
+                              <span className="font-semibold">
+                                {typeof log.wokeUpDuringDream === 'boolean'
+                                  ? (log.wokeUpDuringDream ? 'Yes' : 'No')
+                                  : <span className="text-foreground/60">-</span>}
+                              </span>
                             </div>
                             <div className="flex items-start gap-2">
                               <span className="text-muted-foreground w-24 mt-1">Morning notes:</span>
