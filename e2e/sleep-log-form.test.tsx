@@ -183,30 +183,39 @@ test.describe('SleepLogForm functionality', () => {
     // --- PART 2: LOGGING MORNING SLEEP (THE NEXT DAY) ---
 
     // Calculate tomorrow's date
+    // Calculate tomorrow's date and set it to a "morning" time in the local timezone
     const tomorrow = new Date(today);
     tomorrow.setDate(today.getDate() + 1);
-    // Set the time to 8 AM UTC to ensure it falls within the "morning" flow window (4 AM to 6 PM)
-    const tomorrowISOString = `${tomorrow.toISOString().split('T')[0]}T08:00:00.000Z`;
+    tomorrow.setHours(8, 0, 0, 0); // Set time to 8:00 AM in the runner's local timezone
+    // Convert this local time to an ISO string. The browser will correctly interpret this back to its local time.
+    const tomorrowISOString = tomorrow.toISOString();
 
     console.log(`Simulating tomorrow's date for the browser: ${tomorrowISOString}`);
 
     // Mock the Date object to simulate "the next morning"
     // This script runs BEFORE every new document is created in the page, effectively setting the date for the page.
-    await page.addInitScript((mockedDate: string) => {
-        const _Date = Date; // Store original Date constructor
-        // @ts-ignore
-        globalThis.Date = function (dateString) {
-            if (dateString) {
-                // If a date string is provided, use the original Date constructor
-                return new _Date(dateString);
-            }
-            // Otherwise, return the mocked date
-            return new _Date(mockedDate);
-        };
-        // @ts-ignore
-        globalThis.Date.now = () => new _Date(mockedDate).getTime();
-        // Copy static methods from original Date if needed, though usually not for simple mocks
-        Object.setPrototypeOf(globalThis.Date, _Date.prototype);
+    await page.addInitScript((mockedDate) => {
+      const _Date = Date;
+
+      // A more robust mock that preserves the original constructor's behavior
+      // for calls with arguments, while mocking the no-argument call.
+      // @ts-ignore
+      globalThis.Date = class extends _Date {
+        constructor(...args: any[]) {
+          if (args.length === 0) {
+            // `new Date()`
+            super(mockedDate);
+          } else {
+            // `new Date(anythingElse)`
+            super(...args);
+          }
+        }
+
+        static now() {
+          // `Date.now()`
+          return new _Date(mockedDate).getTime();
+        }
+      };
     }, tomorrowISOString);
     // Reload the page. Now, the app should perceive the date as "tomorrow".
     // It should ideally pick up the "In Progress" log from 'expectedDate' (which is 'today' from the app's perspective
@@ -271,7 +280,7 @@ test.describe('SleepLogForm functionality', () => {
         eveningNotes: eveningNotes,
         wakeupMood: 4,          // The selected morning mood
         fuzziness: 2,           // The selected fuzziness
-        wokeUpDuringDream: false, // Selected 'Yes'
+        wokeUpDuringDream: false, // The switch defaults to 'No' (false) and was not clicked
         sleepDuration: expect.any(String), // Should now be a calculated duration (e.g., "7h 30m"), not "In Progress"
         morningNotes: morningNotes, // New field for morning notes
     }));

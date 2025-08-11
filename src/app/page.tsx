@@ -21,18 +21,29 @@ const Home: FC = () => {
 
   useEffect(() => {
     const today = new Date();
-    const currentHour = today.getUTCHours();
+    // Use getHours() to get the hour in the user's local timezone
+    const currentHour = today.getHours(); // This will give you 21 (for 9 PM AEST)
 
     const relevantLogForMorning = sleepLogs.find(log => !log.wakeupMood || log.wakeupMood === 0);
 
     let determinedFlow: 'morning' | 'evening';
     let determinedLog: SleepLog | undefined;
 
-    if (currentHour >= 4 && currentHour < 18 && relevantLogForMorning) {
+    // Determine if it's "morning flow" based on local time (e.g., 6 AM to 5:59 PM local time)
+    const isMorningTime = currentHour >= 6 && currentHour < 18; // This covers 06:00 to 17:59 local time
+
+    if (isMorningTime) {
       determinedFlow = 'morning';
-      determinedLog = relevantLogForMorning;
+      // If there's an in-progress log, use it for the morning form
+      if (relevantLogForMorning) {
+        determinedLog = relevantLogForMorning;
+      } else {
+        // If it's morning time but no in-progress log, it means we're starting a new day with a morning entry
+        determinedLog = undefined; // Explicitly set to undefined for a fresh morning form
+      }
     } else {
       determinedFlow = 'evening';
+      determinedLog = undefined; // Evening flow always starts fresh
     }
 
     setFlow(determinedFlow);
