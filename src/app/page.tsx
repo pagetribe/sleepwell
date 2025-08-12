@@ -71,8 +71,8 @@ const Home: FC = () => {
             const [wakeHours, wakeMinutes] = (updatedLog.wakeup || '').split(':').map(Number);
 
             // Use the original log's date as a reference point for constructing full Date objects.
-            // If log.date is missing (unlikely, but for safety), fall back to current date.
-            const referenceDate = new Date(log.date || new Date().toISOString().slice(0, 10)); 
+            // Appending T00:00:00 ensures the date is parsed in the local timezone, not UTC.
+            const referenceDate = new Date((log.date ? `${log.date}T00:00:00` : '') || new Date().toISOString().slice(0, 10));
 
             let fullBedtime = new Date(referenceDate.getFullYear(), referenceDate.getMonth(), referenceDate.getDate(), bedHours, bedMinutes);
             let fullWakeup = new Date(referenceDate.getFullYear(), referenceDate.getMonth(), referenceDate.getDate(), wakeHours, wakeMinutes);
