@@ -1,3 +1,4 @@
+// page.tsx
 'use client';
 
 import { FC, useState, useEffect } from 'react';
@@ -23,31 +24,24 @@ const Home: FC = () => {
     const today = new Date();
     const currentHour = today.getHours();
 
-    // Find the most recent log that doesn't have a wakeupMood (indicating it's an "in-progress" log)
-    // Assuming sleepLogs are ordered from newest to oldest due to how they are added in handleSaveLog.
     const relevantLogForMorning = sleepLogs.find(log => !log.wakeupMood || log.wakeupMood === 0);
 
     let determinedFlow: 'morning' | 'evening';
     let determinedLog: SleepLog | undefined;
 
-    // Determine if it's "morning time" based on local hour (e.g., 6 AM to 5:59 PM local time)
-    const isMorningTime = currentHour >= 6 && currentHour < 18; // This covers 06:00 to 17:59 local time
+    const isMorningTime = currentHour >= 6 && currentHour < 18;
 
     if (isMorningTime) {
-      // If it's morning time AND there's an in-progress log from the previous evening
       if (relevantLogForMorning) {
         determinedFlow = 'morning';
         determinedLog = relevantLogForMorning;
       } else {
-        // If it's morning time but NO in-progress log found,
-        // we force the flow to 'evening'. This prompts the user to log their bedtime first.
         determinedFlow = 'evening';
-        determinedLog = undefined; // Ensure it's a fresh evening form
+        determinedLog = undefined;
       }
     } else {
-      // It's evening time (18:00 to 05:59 local time)
       determinedFlow = 'evening';
-      determinedLog = undefined; // Evening flow always starts fresh
+      determinedLog = undefined;
     }
 
     setFlow(determinedFlow);
@@ -61,28 +55,51 @@ const Home: FC = () => {
     if (logData.id) {
       // If logData has an ID, it means we are updating an existing log (typically a morning entry)
       setSleepLogs(
-        sleepLogs.map((log) =>
-          log.id === logData.id 
-            ? { 
-                ...log, 
-                ...logData, 
-                // --- CRITICAL FIX FOR LOG.DATE ---
-                // When completing a log (morning submission), the `date` property
-                // should be the calendar date of the wake-up.
-                // We directly use `new Date()` here, which will be the mocked Tuesday date in the test.
-                date: new Date().toISOString().slice(0, 10),
-                
-                // Recalculate sleep duration only if wakeup time is provided (i.e., morning entry)
-                sleepDuration: logData.wakeup ? calculateDuration(log.bedtime, logData.wakeup) : log.sleepDuration 
-              } 
-            : log
-        )
+        sleepLogs.map((log) => {
+          if (log.id === logData.id) {
+            let updatedLog: SleepLog = { 
+              ...log, // Keep existing log data
+              ...logData, // Apply new data from form
+              // Recalculate sleep duration only if wakeup time is provided (i.e., morning entry)
+              sleepDuration: logData.wakeup ? calculateDuration(log.bedtime, logData.wakeup) : log.sleepDuration 
+            };
+
+            // --- CRITICAL FIX: Ensure the log.date is the calculated wake-up date ---
+            // This logic explicitly determines the correct calendar date for the completed log,
+            // which should be the day the user woke up.
+            const [bedHours, bedMinutes] = (updatedLog.bedtime || '').split(':').map(Number);
+            const [wakeHours, wakeMinutes] = (updatedLog.wakeup || '').split(':').map(Number);
+
+            // Use the original log's date as a reference point for constructing full Date objects.
+            // If log.date is missing (unlikely, but for safety), fall back to current date.
+            const referenceDate = new Date(log.date || new Date().toISOString().slice(0, 10)); 
+
+            let fullBedtime = new Date(referenceDate.getFullYear(), referenceDate.getMonth(), referenceDate.getDate(), bedHours, bedMinutes);
+            let fullWakeup = new Date(referenceDate.getFullYear(), referenceDate.getMonth(), referenceDate.getDate(), wakeHours, wakeMinutes);
+
+            // If the wakeup time is earlier than bedtime on the same calendar day,
+            // it implies wakeup is on the next calendar day.
+            if (updatedLog.wakeup && fullWakeup.getTime() < fullBedtime.getTime()) {
+                fullWakeup.setDate(fullWakeup.getDate() + 1);
+            }
+            
+            // Set the log's date to the calculated wake-up date for consistency.
+            // This is the date that will determine which "day card" the morning details appear on.
+            const wakeupYear = fullWakeup.getFullYear();
+            const wakeupMonth = String(fullWakeup.getMonth() + 1).padStart(2, '0');
+            const wakeupDay = String(fullWakeup.getDate()).padStart(2, '0');
+            updatedLog.date = `${wakeupYear}-${wakeupMonth}-${wakeupDay}`;
+
+            return updatedLog;
+          }
+          return log;
+        })
       );
       savedLogId = logData.id;
     } else {
       // If logData has no ID, it means we are creating a new log (typically an evening entry)
       const now = new Date();      
-      // Using ISO 8601 format (YYYY-MM-DD) for consistency and to avoid parsing issues.
+      // Using ISO 8601 format (YYYY-MM-DD) for consistency.
       const year = now.getFullYear();
       const month = String(now.getMonth() + 1).padStart(2, '0');
       const day = String(now.getDate()).padStart(2, '0');
@@ -93,13 +110,13 @@ const Home: FC = () => {
         date: todayStr, // Initial date for an evening log is its bedtime date
         bedtime: logData.bedtime || '',
         bedtimeMood: logData.bedtimeMood || 0,
-        wakeup: logData.wakeup || '', // Will likely be default '06:30' from form
+        wakeup: logData.wakeup || '', 
         morningNotes: logData.morningNotes || undefined,
         eveningNotes: logData.eveningNotes || undefined,
-        wakeupMood: 0, // Initialized to 0, indicating not yet set by morning entry
-        fuzziness: 0, // Initialized to 0
-        wokeUpDuringDream: logData.wokeUpDuringDream ?? null, // Initialized
-        sleepDuration: 'In Progress', // Placeholder until morning entry completes it
+        wakeupMood: 0, 
+        fuzziness: 0, 
+        wokeUpDuringDream: logData.wokeUpDuringDream ?? null,
+        sleepDuration: 'In Progress', 
       };
       
       setSleepLogs([newLog, ...sleepLogs]); // Add new log to the beginning of the list
@@ -115,15 +132,11 @@ const Home: FC = () => {
   };
 
   const handleEditLog = (updatedLog: SleepLog) => {
-    // This function handles direct edits to logs, allowing full modification.
-    // Ensure sleepDuration is recalculated if wakeup or bedtime change in an edit.
     const updatedSleepLogs = sleepLogs.map(log => {
         if (log.id === updatedLog.id) {
             let finalLog = { ...updatedLog };
 
-            // Recalculate duration if relevant times are present
             if (finalLog.bedtime && finalLog.wakeup) {
-                // Determine the actual wakeup date for the 'date' property
                 const bedtimeLogDate = new Date(log.date); // Use the original log's date as reference for bedtime
                 const [bedHours, bedMinutes] = finalLog.bedtime.split(':').map(Number);
                 const [wakeHours, wakeMinutes] = finalLog.wakeup.split(':').map(Number);
@@ -131,12 +144,10 @@ const Home: FC = () => {
                 const fullBedtime = new Date(bedtimeLogDate.getFullYear(), bedtimeLogDate.getMonth(), bedtimeLogDate.getDate(), bedHours, bedMinutes);
                 let fullWakeup = new Date(bedtimeLogDate.getFullYear(), bedtimeLogDate.getMonth(), bedtimeLogDate.getDate(), wakeHours, wakeMinutes);
 
-                // If the new wakeup time is earlier than the new bedtime, it implies wakeup is next day
                 if (fullWakeup.getTime() < fullBedtime.getTime()) {
                     fullWakeup.setDate(fullWakeup.getDate() + 1);
                 }
 
-                // Set the log's date to the wakeup date for consistency
                 const wakeupYear = fullWakeup.getFullYear();
                 const wakeupMonth = String(fullWakeup.getMonth() + 1).padStart(2, '0');
                 const wakeupDay = String(fullWakeup.getDate()).padStart(2, '0');
@@ -144,7 +155,7 @@ const Home: FC = () => {
             }
             finalLog.sleepDuration = (finalLog.bedtime && finalLog.wakeup) 
                                        ? calculateDuration(finalLog.bedtime, finalLog.wakeup) 
-                                       : finalLog.sleepDuration; // Keep current if not enough info
+                                       : finalLog.sleepDuration;
 
             return finalLog;
         }
