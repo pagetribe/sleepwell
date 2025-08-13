@@ -89,113 +89,93 @@ export const SleepLogList: FC<SleepLogListProps> = ({ logs: rawLogs, onDelete, o
     return `${formattedHour}:${minute} ${ampm}`;
   };
 
-  // --- NEW LOGIC: Create DailySleepSummary objects for the display ---
-  const dailySummariesMap = new Map<string, DailySleepSummary>(); // Key: YYYY-MM-DD
+  const dailySummariesMap = new Map<string, DailySleepSummary>();
 
-  logs.forEach(log => {
-    // Determine if this log is "complete" (has morning data)
-    const isCompletedSleepLog = (log.wakeupMood !== 0 && log.wakeupMood !== undefined && log.wakeupMood !== null);
+logs.forEach(log => {
+  const isCompletedSleepLog = (log.wakeupMood !== 0 && log.wakeupMood !== undefined && log.wakeupMood !== null);
 
-    if (isCompletedSleepLog) {
-      // This log represents a sleep cycle ending on log.date (wake-up date)
-      const wakeUpDate = new Date(log.date);
-      const wakeUpDateISO = wakeUpDate.toISOString().slice(0, 10);
+  if (isCompletedSleepLog) {
+    const wakeUpDate = new Date(`${log.date}T00:00:00`);
+    const wakeUpDateISO = wakeUpDate.toISOString().slice(0, 10);
 
-      // 1. Add/Update morning details for the wake-up date
-      if (!dailySummariesMap.has(wakeUpDateISO)) {
-        // Provide a temporary logId, will be updated if an evening log exists for this day.
-        // Or if only morning data, this logId will be primary.
-        dailySummariesMap.set(wakeUpDateISO, {
-          displayDate: wakeUpDateISO,
-          logId: log.id, // Primary ID for this card will be the complete log's ID
-          morningDetails: null,
-          eveningDetails: null,
-        });
-      }
-      const currentDaySummary = dailySummariesMap.get(wakeUpDateISO)!;
-      currentDaySummary.morningDetails = {
-        wakeup: log.wakeup,
-        wakeupMood: log.wakeupMood,
-        fuzziness: log.fuzziness,
-        wokeUpDuringDream: log.wokeUpDuringDream,
-        morningNotes: log.morningNotes,
-        sleepDuration: log.sleepDuration,
-        bedtimeForThisSleep: log.bedtime,
-        originalLogId: log.id,
-      };
-      // Ensure the logId for the card is the ID of the complete log
-      currentDaySummary.logId = log.id;
-
-
-      // 2. Add/Update evening details for the *previous day* (bedtime date)
-      // Calculate the actual bedtime date
-      const bedtimeDate = new Date(wakeUpDate);
-      const [bedHours, bedMinutes] = log.bedtime.split(':').map(Number);
-      const [wakeHours, wakeMinutes] = log.wakeup.split(':').map(Number);
-
-      const fullBedtime = new Date(bedtimeDate.getFullYear(), bedtimeDate.getMonth(), bedtimeDate.getDate(), bedHours, bedMinutes);
-      const fullWakeup = new Date(bedtimeDate.getFullYear(), bedtimeDate.getMonth(), bedtimeDate.getDate(), wakeHours, wakeMinutes);
-
-      if (fullWakeup.getTime() < fullBedtime.getTime()) {
-          bedtimeDate.setDate(bedtimeDate.getDate() - 1); // If wakeup is 'earlier' (next day)
-      }
-      const bedtimeDateISO = bedtimeDate.toISOString().slice(0, 10);
-
-      if (!dailySummariesMap.has(bedtimeDateISO)) {
-        // Provide a temporary logId, will be updated if an evening log exists for this day.
-        dailySummariesMap.set(bedtimeDateISO, {
-          displayDate: bedtimeDateISO,
-          logId: log.id, // If only evening part, this log will be primary.
-          morningDetails: null,
-          eveningDetails: null,
-        });
-      }
-      const previousDaySummary = dailySummariesMap.get(bedtimeDateISO)!;
-
-      previousDaySummary.eveningDetails = {
-        bedtime: log.bedtime,
-        bedtimeMood: log.bedtimeMood,
-        eveningNotes: log.eveningNotes,
-        isInProgress: false, // This evening part is from a completed log
-        proposedDuration: undefined,
-        originalLogId: log.id,
-      };
-      // If this day had no morning details but now has an evening part from a completed log,
-      // it might become the primary logId for this day's card
-      if (!previousDaySummary.morningDetails) {
-          previousDaySummary.logId = log.id;
-      }
-
-
-    } else {
-      // This log is "in-progress" (just an evening entry with default wakeupMood/fuzziness)
-      // Its date (log.date) IS the bedtime date
-      const bedtimeDate = new Date(log.date);
-      const bedtimeDateISO = bedtimeDate.toISOString().slice(0, 10);
-
-      // Add/Update evening details for this date
-      if (!dailySummariesMap.has(bedtimeDateISO)) {
-        dailySummariesMap.set(bedtimeDateISO, {
-          displayDate: bedtimeDateISO,
-          logId: log.id, // This log is the primary for this day as it's the current "in-progress" one
-          morningDetails: null,
-          eveningDetails: null,
-        });
-      }
-      const currentDaySummaryForEvening = dailySummariesMap.get(bedtimeDateISO)!;
-
-      currentDaySummaryForEvening.eveningDetails = {
-        bedtime: log.bedtime,
-        bedtimeMood: log.bedtimeMood,
-        eveningNotes: log.eveningNotes,
-        isInProgress: true,
-        proposedDuration: (log.bedtime && log.wakeup) ? calculateDuration(log.bedtime, log.wakeup) : undefined,
-        originalLogId: log.id,
-      };
-      // For an in-progress log, this log is definitely the one to use for the AccordionItem's ID
-      currentDaySummaryForEvening.logId = log.id;
+    if (!dailySummariesMap.has(wakeUpDateISO)) {
+      dailySummariesMap.set(wakeUpDateISO, {
+        displayDate: wakeUpDateISO,
+        logId: log.id,
+        morningDetails: null,
+        eveningDetails: null,
+      });
     }
-  });
+    const currentDaySummary = dailySummariesMap.get(wakeUpDateISO)!;
+    currentDaySummary.morningDetails = {
+      wakeup: log.wakeup,
+      wakeupMood: log.wakeupMood,
+      fuzziness: log.fuzziness,
+      wokeUpDuringDream: log.wokeUpDuringDream,
+      morningNotes: log.morningNotes,
+      sleepDuration: log.sleepDuration,
+      bedtimeForThisSleep: log.bedtime,
+      originalLogId: log.id,
+    };
+    currentDaySummary.logId = log.id;
+
+    const bedtimeDate = new Date(`${log.date}T00:00:00`);
+    const [bedHours, bedMinutes] = log.bedtime.split(':').map(Number);
+    const [wakeHours, wakeMinutes] = log.wakeup.split(':').map(Number);
+
+    const fullBedtime = new Date(bedtimeDate.getFullYear(), bedtimeDate.getMonth(), bedtimeDate.getDate(), bedHours, bedMinutes);
+    const fullWakeup = new Date(bedtimeDate.getFullYear(), bedtimeDate.getMonth(), bedtimeDate.getDate(), wakeHours, wakeMinutes);
+
+    if (fullWakeup.getTime() < fullBedtime.getTime()) {
+      bedtimeDate.setDate(bedtimeDate.getDate() - 1);
+    }
+    const bedtimeDateISO = bedtimeDate.toISOString().slice(0, 10);
+
+    if (!dailySummariesMap.has(bedtimeDateISO)) {
+      dailySummariesMap.set(bedtimeDateISO, {
+        displayDate: bedtimeDateISO,
+        logId: log.id,
+        morningDetails: null,
+        eveningDetails: null,
+      });
+    }
+    const previousDaySummary = dailySummariesMap.get(bedtimeDateISO)!;
+    previousDaySummary.eveningDetails = {
+      bedtime: log.bedtime,
+      bedtimeMood: log.bedtimeMood,
+      eveningNotes: log.eveningNotes,
+      isInProgress: false,
+      proposedDuration: undefined,
+      originalLogId: log.id,
+    };
+
+    if (!previousDaySummary.morningDetails) {
+      previousDaySummary.logId = log.id;
+    }
+  } else {
+    const bedtimeDate = new Date(`${log.date}T00:00:00`);
+    const bedtimeDateISO = bedtimeDate.toISOString().slice(0, 10);
+
+    if (!dailySummariesMap.has(bedtimeDateISO)) {
+      dailySummariesMap.set(bedtimeDateISO, {
+        displayDate: bedtimeDateISO,
+        logId: log.id,
+        morningDetails: null,
+        eveningDetails: null,
+      });
+    }
+    const currentDaySummaryForEvening = dailySummariesMap.get(bedtimeDateISO)!;
+    currentDaySummaryForEvening.eveningDetails = {
+      bedtime: log.bedtime,
+      bedtimeMood: log.bedtimeMood,
+      eveningNotes: log.eveningNotes,
+      isInProgress: true,
+      proposedDuration: (log.bedtime && log.wakeup) ? calculateDuration(log.bedtime, log.wakeup) : undefined,
+      originalLogId: log.id,
+    };
+    currentDaySummaryForEvening.logId = log.id;
+  }
+});
 
 
   // Filter out any summaries that ended up with no morning OR evening details (shouldn't happen with current logic but as a safeguard)

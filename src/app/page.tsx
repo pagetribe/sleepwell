@@ -49,83 +49,70 @@ const Home: FC = () => {
   }, [sleepLogs]);
 
 
-  const handleSaveLog = (logData: Partial<SleepLog>) => {
-    let savedLogId = '';
-    
-    if (logData.id) {
-      // If logData has an ID, it means we are updating an existing log (typically a morning entry)
-      setSleepLogs(
-        sleepLogs.map((log) => {
-          if (log.id === logData.id) {
-            let updatedLog: SleepLog = { 
-              ...log, // Keep existing log data
-              ...logData, // Apply new data from form
-              // Recalculate sleep duration only if wakeup time is provided (i.e., morning entry)
-              sleepDuration: logData.wakeup ? calculateDuration(log.bedtime, logData.wakeup) : log.sleepDuration 
-            };
+ const handleSaveLog = (logData: Partial<SleepLog>) => {
+  let savedLogId = '';
 
-            // --- CRITICAL FIX: Ensure the log.date is the calculated wake-up date ---
-            // This logic explicitly determines the correct calendar date for the completed log,
-            // which should be the day the user woke up.
+  if (logData.id) {
+    setSleepLogs(
+      sleepLogs.map((log) => {
+        if (log.id === logData.id) {
+          const updatedLog: SleepLog = {
+            ...log,
+            ...logData,
+            sleepDuration: logData.wakeup ? calculateDuration(log.bedtime, logData.wakeup) : log.sleepDuration,
+          };
+
+          if (updatedLog.wakeup) {
+            const referenceDate = new Date(`${log.date}T00:00:00`);
             const [bedHours, bedMinutes] = (updatedLog.bedtime || '').split(':').map(Number);
             const [wakeHours, wakeMinutes] = (updatedLog.wakeup || '').split(':').map(Number);
-
-            // Use the original log's date as a reference point for constructing full Date objects.
-            // Appending T00:00:00 ensures the date is parsed in the local timezone, not UTC.
-            const referenceDate = new Date((log.date ? `${log.date}T00:00:00` : '') || new Date().toISOString().slice(0, 10));
 
             let fullBedtime = new Date(referenceDate.getFullYear(), referenceDate.getMonth(), referenceDate.getDate(), bedHours, bedMinutes);
             let fullWakeup = new Date(referenceDate.getFullYear(), referenceDate.getMonth(), referenceDate.getDate(), wakeHours, wakeMinutes);
 
-            // If the wakeup time is earlier than bedtime on the same calendar day,
-            // it implies wakeup is on the next calendar day.
-            if (updatedLog.wakeup && fullWakeup.getTime() < fullBedtime.getTime()) {
-                fullWakeup.setDate(fullWakeup.getDate() + 1);
+            if (fullWakeup.getTime() < fullBedtime.getTime()) {
+              fullWakeup.setDate(fullWakeup.getDate() + 1);
             }
-            
-            // Set the log's date to the calculated wake-up date for consistency.
-            // This is the date that will determine which "day card" the morning details appear on.
+
             const wakeupYear = fullWakeup.getFullYear();
             const wakeupMonth = String(fullWakeup.getMonth() + 1).padStart(2, '0');
             const wakeupDay = String(fullWakeup.getDate()).padStart(2, '0');
             updatedLog.date = `${wakeupYear}-${wakeupMonth}-${wakeupDay}`;
-
-            return updatedLog;
           }
-          return log;
-        })
-      );
-      savedLogId = logData.id;
-    } else {
-      // If logData has no ID, it means we are creating a new log (typically an evening entry)
-      const now = new Date();      
-      // Using ISO 8601 format (YYYY-MM-DD) for consistency.
-      const year = now.getFullYear();
-      const month = String(now.getMonth() + 1).padStart(2, '0');
-      const day = String(now.getDate()).padStart(2, '0');
-      const todayStr = `${year}-${month}-${day}`;
+          return updatedLog;
+        }
+        return log;
+      })
+    );
+    savedLogId = logData.id;
+  } else {
+    const now = new Date();
+    const year = now.getFullYear();
+    const month = String(now.getMonth() + 1).padStart(2, '0');
+    const day = String(now.getDate()).padStart(2, '0');
+    const todayStr = `${year}-${month}-${day}`;
 
-      const newLog: SleepLog = {
-        id: new Date().toISOString(), // Unique ID for the new log
-        date: todayStr, // Initial date for an evening log is its bedtime date
-        bedtime: logData.bedtime || '',
-        bedtimeMood: logData.bedtimeMood || 0,
-        wakeup: logData.wakeup || '', 
-        morningNotes: logData.morningNotes || undefined,
-        eveningNotes: logData.eveningNotes || undefined,
-        wakeupMood: 0, 
-        fuzziness: 0, 
-        wokeUpDuringDream: logData.wokeUpDuringDream ?? null,
-        sleepDuration: 'In Progress', 
-      };
-      
-      setSleepLogs([newLog, ...sleepLogs]); // Add new log to the beginning of the list
-      savedLogId = newLog.id;
-    }
+    const newLog: SleepLog = {
+      id: new Date().toISOString(),
+      date: todayStr,
+      bedtime: logData.bedtime || '',
+      bedtimeMood: logData.bedtimeMood || 0,
+      wakeup: logData.wakeup || '',
+      morningNotes: logData.morningNotes || undefined,
+      eveningNotes: logData.eveningNotes || undefined,
+      wakeupMood: 0,
+      fuzziness: 0,
+      wokeUpDuringDream: logData.wokeUpDuringDream ?? null,
+      sleepDuration: 'In Progress',
+    };
 
-    setLastSavedLogId(savedLogId);
-    setActiveTab('history'); // Navigate to history after saving
-  };
+    setSleepLogs([newLog, ...sleepLogs]);
+    savedLogId = newLog.id;
+  }
+
+  setLastSavedLogId(savedLogId);
+  setActiveTab('history');
+};
 
   const handleDeleteLog = (id: string) => {
     setSleepLogs(sleepLogs.filter((log) => log.id !== id));
