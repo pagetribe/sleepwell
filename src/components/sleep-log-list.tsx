@@ -253,15 +253,17 @@ logs.forEach(log => {
               weekday: 'long',
               month: 'long',
               day: 'numeric',
+              timeZone: 'Australia/Sydney',
             };
-            const title = displayDateObj.toLocaleDateString('en-US', titleDateOptions);
+            const title = displayDateObj.toLocaleDateString('en-AU', titleDateOptions);
 
             const sectionDateOptions: Intl.DateTimeFormatOptions = {
               month: 'long',
               day: 'numeric',
+              timeZone: 'Australia/Sydney',
             };
-            const morningSectionDateString = displayDateObj.toLocaleDateString('en-US', sectionDateOptions);
-            const eveningSectionDateString = displayDateObj.toLocaleDateString('en-US', sectionDateOptions); // Evening is on the same displayDate
+            const morningSectionDateString = displayDateObj.toLocaleDateString('en-AU', sectionDateOptions);
+            const eveningSectionDateString = displayDateObj.toLocaleDateString('en-AU', sectionDateOptions); // Evening is on the same displayDate
 
             // Determine which original log to use for editing/deleting based on the primary logId for this summary
             // This is crucial because a dailySummary might combine parts of two different actual SleepLog objects

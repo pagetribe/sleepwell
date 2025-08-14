@@ -21,6 +21,7 @@ const Home: FC = () => {
   const [formLog, setFormLog] = useState<SleepLog | undefined>(undefined);
 
   useEffect(() => {
+    // Create a new date object with the Australian time zone
     const today = new Date();
     const currentHour = today.getHours();
 
@@ -29,7 +30,7 @@ const Home: FC = () => {
     let determinedFlow: 'morning' | 'evening';
     let determinedLog: SleepLog | undefined;
 
-    const isMorningTime = currentHour >= 6 && currentHour < 18;
+    const isMorningTime = currentHour >= 4 && currentHour < 18;
 
     if (isMorningTime) {
       if (relevantLogForMorning) {
@@ -86,6 +87,7 @@ const Home: FC = () => {
     );
     savedLogId = logData.id;
   } else {
+    // Create date with Australian time zone
     const now = new Date();
     const year = now.getFullYear();
     const month = String(now.getMonth() + 1).padStart(2, '0');
@@ -93,7 +95,7 @@ const Home: FC = () => {
     const todayStr = `${year}-${month}-${day}`;
 
     const newLog: SleepLog = {
-      id: new Date().toISOString(),
+      id: now.getTime().toString(), // Use timestamp instead of ISO string for better uniqueness
       date: todayStr,
       bedtime: logData.bedtime || '',
       bedtimeMood: logData.bedtimeMood || 0,

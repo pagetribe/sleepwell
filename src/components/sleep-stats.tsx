@@ -63,8 +63,8 @@ function buildNightRecords(logs: SleepLog[]): NightRecord[] {
         bedtimeDate.setDate(bedtimeDate.getDate() - 1);
       }
 
-      const nightStartDisplay = bedtimeDate.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
-      const nightEndDisplay = wakeupDate.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+      const nightStartDisplay = bedtimeDate.toLocaleDateString('en-AU', { month: 'short', day: 'numeric', timeZone: 'Australia/Sydney' });
+      const nightEndDisplay = wakeupDate.toLocaleDateString('en-AU', { month: 'short', day: 'numeric', timeZone: 'Australia/Sydney' });
 
       nights.push({
         logId: log.id,

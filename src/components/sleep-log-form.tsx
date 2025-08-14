@@ -58,7 +58,7 @@ export const SleepLogForm: FC<SleepLogFormProps> = ({ onSave, existingLog, flow 
   useEffect(() => {
     const now = new Date();
     // For debugging on mobile, let's provide a clear, unambiguous time string.
-    setDebugTime(now.toLocaleString('en-US', {
+    setDebugTime(now.toLocaleString('en-AU', {
       weekday: 'short',
       year: 'numeric',
       month: 'short',
@@ -66,6 +66,7 @@ export const SleepLogForm: FC<SleepLogFormProps> = ({ onSave, existingLog, flow 
       hour: '2-digit',
       minute: '2-digit',
       second: '2-digit',
+      timeZone: 'Australia/Sydney',
       timeZoneName: 'short',
     }));
     if (flow === 'morning' && existingLog) {
