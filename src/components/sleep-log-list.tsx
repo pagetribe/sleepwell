@@ -53,6 +53,15 @@ interface DailySleepSummary {
   } | null;
 }
 
+// Helper function to get YYYY-MM-DD from a Date object without timezone conversion issues.
+// Using .toISOString().slice(0, 10) can result in the wrong date for timezones ahead of UTC.
+const toYYYYMMDD = (date: Date): string => {
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, '0');
+  const day = String(date.getDate()).padStart(2, '0');
+  return `${year}-${month}-${day}`;
+};
+
 const MoodIndicator: FC<{ value: number }> = ({ value }) => {
   if (value === 0 || value === undefined || value === null) {
     return <span className="text-foreground/60">-</span>;
@@ -96,17 +105,17 @@ logs.forEach(log => {
 
   if (isCompletedSleepLog) {
     const wakeUpDate = new Date(`${log.date}T00:00:00`);
-    const wakeUpDateISO = wakeUpDate.toISOString().slice(0, 10);
+    const wakeUpDateKey = toYYYYMMDD(wakeUpDate);
 
-    if (!dailySummariesMap.has(wakeUpDateISO)) {
-      dailySummariesMap.set(wakeUpDateISO, {
-        displayDate: wakeUpDateISO,
+    if (!dailySummariesMap.has(wakeUpDateKey)) {
+      dailySummariesMap.set(wakeUpDateKey, {
+        displayDate: wakeUpDateKey,
         logId: log.id,
         morningDetails: null,
         eveningDetails: null,
       });
     }
-    const currentDaySummary = dailySummariesMap.get(wakeUpDateISO)!;
+    const currentDaySummary = dailySummariesMap.get(wakeUpDateKey)!;
     currentDaySummary.morningDetails = {
       wakeup: log.wakeup,
       wakeupMood: log.wakeupMood,
@@ -129,17 +138,17 @@ logs.forEach(log => {
     if (fullWakeup.getTime() < fullBedtime.getTime()) {
       bedtimeDate.setDate(bedtimeDate.getDate() - 1);
     }
-    const bedtimeDateISO = bedtimeDate.toISOString().slice(0, 10);
+    const bedtimeDateKey = toYYYYMMDD(bedtimeDate);
 
-    if (!dailySummariesMap.has(bedtimeDateISO)) {
-      dailySummariesMap.set(bedtimeDateISO, {
-        displayDate: bedtimeDateISO,
+    if (!dailySummariesMap.has(bedtimeDateKey)) {
+      dailySummariesMap.set(bedtimeDateKey, {
+        displayDate: bedtimeDateKey,
         logId: log.id,
         morningDetails: null,
         eveningDetails: null,
       });
     }
-    const previousDaySummary = dailySummariesMap.get(bedtimeDateISO)!;
+    const previousDaySummary = dailySummariesMap.get(bedtimeDateKey)!;
     previousDaySummary.eveningDetails = {
       bedtime: log.bedtime,
       bedtimeMood: log.bedtimeMood,
@@ -154,17 +163,17 @@ logs.forEach(log => {
     }
   } else {
     const bedtimeDate = new Date(`${log.date}T00:00:00`);
-    const bedtimeDateISO = bedtimeDate.toISOString().slice(0, 10);
+    const bedtimeDateKey = toYYYYMMDD(bedtimeDate);
 
-    if (!dailySummariesMap.has(bedtimeDateISO)) {
-      dailySummariesMap.set(bedtimeDateISO, {
-        displayDate: bedtimeDateISO,
+    if (!dailySummariesMap.has(bedtimeDateKey)) {
+      dailySummariesMap.set(bedtimeDateKey, {
+        displayDate: bedtimeDateKey,
         logId: log.id,
         morningDetails: null,
         eveningDetails: null,
       });
     }
-    const currentDaySummaryForEvening = dailySummariesMap.get(bedtimeDateISO)!;
+    const currentDaySummaryForEvening = dailySummariesMap.get(bedtimeDateKey)!;
     currentDaySummaryForEvening.eveningDetails = {
       bedtime: log.bedtime,
       bedtimeMood: log.bedtimeMood,

@@ -38,6 +38,7 @@ type FormValues = z.infer<typeof formSchema>;
 
 export const SleepLogForm: FC<SleepLogFormProps> = ({ onSave, existingLog, flow }) => {
   const fuzzinessLevels = Array.from({ length: 5 }, (_, i) => i + 1);
+  const [debugTime, setDebugTime] = useState<string | null>(null);
 
   const form = useForm<FormValues>({
     resolver: zodResolver(formSchema),
@@ -55,6 +56,18 @@ export const SleepLogForm: FC<SleepLogFormProps> = ({ onSave, existingLog, flow 
   });
 
   useEffect(() => {
+    const now = new Date();
+    // For debugging on mobile, let's provide a clear, unambiguous time string.
+    setDebugTime(now.toLocaleString('en-US', {
+      weekday: 'short',
+      year: 'numeric',
+      month: 'short',
+      day: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit',
+      second: '2-digit',
+      timeZoneName: 'short',
+    }));
     if (flow === 'morning' && existingLog) {
       form.reset({
         id: existingLog.id,
@@ -68,7 +81,6 @@ export const SleepLogForm: FC<SleepLogFormProps> = ({ onSave, existingLog, flow 
         wokeUpDuringDream: existingLog.wokeUpDuringDream ?? false,
       });
     } else if (flow === 'evening') {
-      const now = new Date();
       const hours = String(now.getHours()).padStart(2, '0');
       const minutes = String(now.getMinutes()).padStart(2, '0');
       
@@ -101,6 +113,11 @@ export const SleepLogForm: FC<SleepLogFormProps> = ({ onSave, existingLog, flow 
   if (!flow) {
     return (
       <div className="space-y-8">
+        <div className="text-xs text-muted-foreground text-center mb-4 p-2 border rounded-md bg-muted/50">
+          <p><strong>Debug Info:</strong></p>
+          <p>Time: {debugTime}</p>
+          <p>Flow: <strong>{flow || 'none'}</strong></p>
+        </div>
         <div className="h-96" />
       </div>
     );
@@ -108,6 +125,11 @@ export const SleepLogForm: FC<SleepLogFormProps> = ({ onSave, existingLog, flow 
 
   return (
     <Form {...form}>
+      <div className="text-xs text-muted-foreground text-center mb-4 p-2 border rounded-md bg-muted/50">
+        <p><strong>Debug Info:</strong></p>
+        <p>Time: {debugTime}</p>
+        <p>Flow: <strong>{flow || 'none'}</strong></p>
+      </div>
       <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">
         {flow === 'evening' && (
           <>
