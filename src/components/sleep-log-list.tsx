@@ -324,24 +324,12 @@ logs.forEach(log => {
                             ...originalLogForActions, // Use the original log found earlier
                             bedtime: getEditValue(editData.bedtime, originalLogForActions.bedtime) ?? '',
                             wakeup: getEditValue(editData.wakeup, originalLogForActions.wakeup) ?? '',
-                            bedtimeMood: getEditValue(
-                              editData.bedtimeMood !== undefined && editData.bedtimeMood !== ''
-                                ? Number(editData.bedtimeMood)
-                                : undefined,
-                              originalLogForActions.bedtimeMood
-                            ) ?? 0,
-                            wakeupMood: getEditValue(
-                              editData.wakeupMood !== undefined && editData.wakeupMood !== ''
-                                ? Number(editData.wakeupMood)
-                                : undefined,
-                              originalLogForActions.wakeupMood
-                            ) ?? 0,
-                            fuzziness: getEditValue(
-                              editData.fuzziness !== undefined && editData.fuzziness !== ''
-                                ? Number(editData.fuzziness)
-                                : undefined,
-                              originalLogForActions.fuzziness
-                            ) ?? 0,
+                            bedtimeMood: editData.bedtimeMood === '' ? 0 : 
+                              (editData.bedtimeMood !== undefined ? Number(editData.bedtimeMood) : originalLogForActions.bedtimeMood) ?? 0,
+                            wakeupMood: editData.wakeupMood === '' ? 0 : 
+                              (editData.wakeupMood !== undefined ? Number(editData.wakeupMood) : originalLogForActions.wakeupMood) ?? 0,
+                            fuzziness: editData.fuzziness === '' ? 0 : 
+                              (editData.fuzziness !== undefined ? Number(editData.fuzziness) : originalLogForActions.fuzziness) ?? 0,
                             wokeUpDuringDream: getEditValue(
                               editData.wokeUpDuringDream !== undefined
                                 ? (editData.wokeUpDuringDream === 'true' || editData.wokeUpDuringDream === true)
@@ -380,8 +368,8 @@ logs.forEach(log => {
                             type="number"
                             min={0}
                             max={5}
-                            value={getEditValue(editData.bedtimeMood, originalLogForActions.bedtimeMood) ?? ''}
-                            onChange={e => setEditData(d => ({ ...d, bedtimeMood: e.target.value }))}
+                            value={editData.bedtimeMood !== undefined ? editData.bedtimeMood : (originalLogForActions.bedtimeMood ?? '')}
+                            onChange={e => setEditData(d => ({ ...d, bedtimeMood: e.target.value === '' ? '' : Number(e.target.value) }))}
                             className="input input-bordered w-full"
                           />
                         </div>
@@ -391,8 +379,8 @@ logs.forEach(log => {
                             type="number"
                             min={0}
                             max={5}
-                            value={getEditValue(editData.wakeupMood, originalLogForActions.wakeupMood) ?? ''}
-                            onChange={e => setEditData(d => ({ ...d, wakeupMood: e.target.value }))}
+                            value={editData.wakeupMood !== undefined ? editData.wakeupMood : (originalLogForActions.wakeupMood ?? '')}
+                            onChange={e => setEditData(d => ({ ...d, wakeupMood: e.target.value === '' ? '' : Number(e.target.value) }))}
                             className="input input-bordered w-full"
                           />
                         </div>
@@ -402,8 +390,8 @@ logs.forEach(log => {
                             type="number"
                             min={0}
                             max={5}
-                            value={getEditValue(editData.fuzziness, originalLogForActions.fuzziness) ?? ''}
-                            onChange={e => setEditData(d => ({ ...d, fuzziness: e.target.value }))}
+                            value={editData.fuzziness !== undefined ? editData.fuzziness : (originalLogForActions.fuzziness ?? '')}
+                            onChange={e => setEditData(d => ({ ...d, fuzziness: e.target.value === '' ? '' : Number(e.target.value) }))}
                             className="input input-bordered w-full"
                           />
                         </div>
