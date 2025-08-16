@@ -6,7 +6,7 @@ import { Button } from '@/components/ui/button';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
 import type { SleepLog } from '@/lib/types';
 import { MOOD_OPTIONS } from '@/lib/types';
-import { calculateDuration } from '@/lib/utils';
+import { calculateDuration, getDateInTimezone } from '@/lib/utils';
 import {
   ClockIcon,
   MoonIcon,
@@ -104,7 +104,7 @@ logs.forEach(log => {
   const isCompletedSleepLog = (log.wakeupMood !== 0 && log.wakeupMood !== undefined && log.wakeupMood !== null);
 
   if (isCompletedSleepLog) {
-    const wakeUpDate = new Date(`${log.date}T00:00:00`);
+    const wakeUpDate = getDateInTimezone(`${log.date}T00:00:00`);
     const wakeUpDateKey = toYYYYMMDD(wakeUpDate);
 
     if (!dailySummariesMap.has(wakeUpDateKey)) {
@@ -128,7 +128,7 @@ logs.forEach(log => {
     };
     currentDaySummary.logId = log.id;
 
-    const bedtimeDate = new Date(`${log.date}T00:00:00`);
+    const bedtimeDate = getDateInTimezone(`${log.date}T00:00:00`);
     const [bedHours, bedMinutes] = log.bedtime.split(':').map(Number);
     const [wakeHours, wakeMinutes] = log.wakeup.split(':').map(Number);
 
@@ -162,7 +162,7 @@ logs.forEach(log => {
       previousDaySummary.logId = log.id;
     }
   } else {
-    const bedtimeDate = new Date(`${log.date}T00:00:00`);
+    const bedtimeDate = getDateInTimezone(`${log.date}T00:00:00`);
     const bedtimeDateKey = toYYYYMMDD(bedtimeDate);
 
     if (!dailySummariesMap.has(bedtimeDateKey)) {
@@ -198,15 +198,33 @@ logs.forEach(log => {
   );
 
   // Handle Accordion default open state
-  const initialOpenItems = defaultOpenId ? [defaultOpenId] : (sortedDailySummaries.length > 0 ? [sortedDailySummaries[0].logId] : []);
-  const [openAccordionItems, setOpenAccordionItems] = useState<string[]>(initialOpenItems);
+  const [openAccordionItems, setOpenAccordionItems] = useState<string[]>(() => {
+    if (defaultOpenId) {
+      const log = logs.find(l => l.id === defaultOpenId);
+      if (log) {
+        const date = getDateInTimezone(`${log.date}T00:00:00`);
+        return [toYYYYMMDD(date)];
+      }
+    }
+    if (sortedDailySummaries.length > 0) {
+      return [sortedDailySummaries[0].displayDate];
+    }
+    return [];
+  });
 
   // Ensure defaultOpenId is opened if it changes or wasn't initially present
   useEffect(() => {
-    if (defaultOpenId && !openAccordionItems.includes(defaultOpenId)) {
-      setOpenAccordionItems(prev => [...prev, defaultOpenId]);
+    if (defaultOpenId) {
+      const log = logs.find(l => l.id === defaultOpenId);
+      if (log) {
+        const displayDate = toYYYYMMDD(getDateInTimezone(`${log.date}T00:00:00`));
+        if (!openAccordionItems.includes(displayDate)) {
+          setOpenAccordionItems(prev => [...prev, displayDate]);
+        }
+      }
     }
-  }, [defaultOpenId, openAccordionItems]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [defaultOpenId]);
 
 
   const [editingId, setEditingId] = useState<string | null>(null);
@@ -248,7 +266,7 @@ logs.forEach(log => {
         <Accordion type="multiple" className="w-full" value={openAccordionItems} onValueChange={setOpenAccordionItems}>
           {sortedDailySummaries.map((dailySummary) => {
             // Convert ISO date string to readable date for the card title
-            const displayDateObj = new Date(dailySummary.displayDate);
+            const displayDateObj = getDateInTimezone(dailySummary.displayDate);
             const titleDateOptions: Intl.DateTimeFormatOptions = {
               weekday: 'long',
               month: 'long',
@@ -274,8 +292,8 @@ logs.forEach(log => {
             const isEditing = editingId === originalLogForActions.id;
 
             return (
-              // Use the logId of the primary log for this summary as the AccordionItem value
-              <AccordionItem value={originalLogForActions.id} key={originalLogForActions.id} className="border-b-0 neumorphic-flat mb-3 !rounded-lg overflow-hidden">
+              // Use the displayDate of the summary as it's a unique value for each card
+              <AccordionItem value={dailySummary.displayDate} key={dailySummary.displayDate} className="border-b-0 neumorphic-flat mb-3 !rounded-lg overflow-hidden">
                 <AccordionTrigger className="hover:no-underline p-4">
                   <div className="flex justify-between items-center w-full">
                     <div className="flex flex-col text-left">

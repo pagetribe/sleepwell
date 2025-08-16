@@ -5,6 +5,11 @@ export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs))
 }
 
+export const getDateInTimezone = (date: Date | number | string = new Date()) => {
+  const ausTime = new Date(date).toLocaleString('en-US', { timeZone: 'Australia/Sydney' });
+  return new Date(ausTime);
+};
+
 export function calculateDuration(start: string, end: string): string {
   if (!start || !end || !start.includes(':') || !end.includes(':')) {
     return '0h 0m';

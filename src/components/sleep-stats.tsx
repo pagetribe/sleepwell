@@ -15,6 +15,7 @@ import {
   AlertDialogFooter,
   AlertDialogCancel,
 } from '@/components/ui/alert-dialog';
+import { getDateInTimezone } from "@/lib/utils";
 // Removed SleepLogList import as it's not used directly here
 
 interface SleepStatsProps {
@@ -51,7 +52,7 @@ function buildNightRecords(logs: SleepLog[]): NightRecord[] {
     if (log.bedtime && log.wakeup && (log.wakeupMood !== 0 && log.wakeupMood !== undefined && log.wakeupMood !== null)) {
 
       // Determine the actual bedtime date for display
-      const wakeupDate = new Date(log.date); // This is the wakeup date (e.g., Aug 12)
+      const wakeupDate = getDateInTimezone(log.date); // This is the wakeup date (e.g., Aug 12)
       const [bedHours, bedMinutes] = log.bedtime.split(':').map(Number);
       const [wakeHours, wakeMinutes] = log.wakeup.split(':').map(Number);
 

@@ -14,7 +14,7 @@ import { Switch } from '@/components/ui/switch';
 import { Textarea } from '@/components/ui/textarea';
 import type { SleepLog } from '@/lib/types';
 import { MOOD_OPTIONS } from '@/lib/types';
-import { cn } from '@/lib/utils';
+import { cn, getDateInTimezone } from '@/lib/utils';
 
 interface SleepLogFormProps {
   onSave: (data: Partial<SleepLog>) => void;
@@ -56,7 +56,7 @@ export const SleepLogForm: FC<SleepLogFormProps> = ({ onSave, existingLog, flow 
   });
 
   useEffect(() => {
-    const now = new Date();
+    const now = getDateInTimezone();
     // For debugging on mobile, let's provide a clear, unambiguous time string.
     setDebugTime(now.toLocaleString('en-AU', {
       weekday: 'short',

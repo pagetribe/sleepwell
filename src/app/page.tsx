@@ -10,7 +10,7 @@ import { SleepLogList } from '@/components/sleep-log-list';
 import { SleepStats } from '@/components/sleep-stats';
 import { useLocalStorage } from '@/hooks/use-local-storage';
 import type { SleepLog } from '@/lib/types';
-import { calculateDuration } from '@/lib/utils';
+import { calculateDuration, getDateInTimezone } from '@/lib/utils';
 
 
 const Home: FC = () => {
@@ -22,7 +22,7 @@ const Home: FC = () => {
 
   useEffect(() => {
     // Create a new date object with the Australian time zone
-    const today = new Date();
+    const today = getDateInTimezone();
     const currentHour = today.getHours();
 
     const relevantLogForMorning = sleepLogs.find(log => !log.wakeupMood || log.wakeupMood === 0);
@@ -64,7 +64,7 @@ const Home: FC = () => {
           };
 
           if (updatedLog.wakeup) {
-            const referenceDate = new Date(`${log.date}T00:00:00`);
+            const referenceDate = getDateInTimezone(`${log.date}T00:00:00`);
             const [bedHours, bedMinutes] = (updatedLog.bedtime || '').split(':').map(Number);
             const [wakeHours, wakeMinutes] = (updatedLog.wakeup || '').split(':').map(Number);
 
@@ -88,7 +88,7 @@ const Home: FC = () => {
     savedLogId = logData.id;
   } else {
     // Create date with Australian time zone
-    const now = new Date();
+    const now = getDateInTimezone();
     const year = now.getFullYear();
     const month = String(now.getMonth() + 1).padStart(2, '0');
     const day = String(now.getDate()).padStart(2, '0');
@@ -126,7 +126,7 @@ const Home: FC = () => {
             let finalLog = { ...updatedLog };
 
             if (finalLog.bedtime && finalLog.wakeup) {
-                const bedtimeLogDate = new Date(log.date); // Use the original log's date as reference for bedtime
+                const bedtimeLogDate = getDateInTimezone(log.date); // Use the original log's date as reference for bedtime
                 const [bedHours, bedMinutes] = finalLog.bedtime.split(':').map(Number);
                 const [wakeHours, wakeMinutes] = finalLog.wakeup.split(':').map(Number);
 
